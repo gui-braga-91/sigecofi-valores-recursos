@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECOFI - Módulo Contratos</title>
+  <!-- VÍNCULO COM O CSS EXTERNO -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- TOAST NOTIFICATION DE SUCESSO -->
+  <div id="toastBox">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span id="toastMsg">Copiado!</span>
+  </div>
+
+  <div class="window-modal">
+    <!-- BARRA DOS DESENVOLVEDORES (LINKEDIN & GITHUB) -->
+    <div class="top-dev-bar">
+      <!-- PERFIL GUILHERME -->
+      <div class="dev-card">
+        <span class="dev-name">DEV: GUILHERME BRAGA</span>
+        <a href="https://www.linkedin.com/in/guilherme-alves-braga/" target="_blank" class="dev-icon-btn linkedin" title="LinkedIn Guilherme">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+        </a>
+        <a href="https://github.com/gui-braga-91" target="_blank" class="dev-icon-btn github" title="GitHub Guilherme">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        </a>
+      </div>
+
+      <!-- PERFIL VICTOR -->
+      <div class="dev-card">
+        <span class="dev-name">DEV: VICTOR TELES</span>
+        <a href="javascript:void(0);" onclick="mostrarToast('Perfil do LinkedIn em atualização.')" class="dev-icon-btn linkedin disabled" title="LinkedIn Victor (Em atualização)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+        </a>
+        <a href="https://github.com/vhgtvictor" target="_blank" class="dev-icon-btn github" title="GitHub Victor">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- CABEÇALHO DO CONTRATO -->
+    <div class="top-header">
+      <div style="flex: 1;">
+        <div id="headerVis" class="modo-vis">
+          <p style="font-size: 12px; margin-bottom: 4px;">Nº do contrato: <strong>26/06/022</strong></p>
+          <p style="font-size: 12px; margin-bottom: 4px;">Apelido: <strong>SUPERINTEROP SUPORTE EM INFORMÁTICA LTDA</strong></p>
+          <p style="font-size: 12px;">Áreas atendidas: <span class="badge-tag">DETIC</span> <span class="badge-tag">TESOURO</span></p>
+        </div>
+        <div id="headerEdit" class="modo-edit hidden">
+          <div class="field-row">
+            <span class="field-label">Nº do contrato:</span>
+            <input type="text" value="26/06/022" class="input-text" style="max-width: 200px;" />
+          </div>
+          <div class="field-row">
+            <span class="field-label">Apelido:</span>
+            <input type="text" value="SUPERINTEROP SUPORTE EM INFORMÁTICA LTDA" class="input-text" style="max-width: 450px;" />
+          </div>
+          <div class="field-row">
+            <span class="field-label">Áreas atendidas:</span>
+            <span class="badge-tag">DETIC <span class="badge-close">×</span></span>
+            <span class="badge-tag">TESOURO <span class="badge-close">×</span></span>
+            <button style="border: 1px solid #cbd5e1; background: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">Pesquisar área</button>
+          </div>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div style="margin-bottom: 8px; font-size: 11px; color: #475569; line-height: 1.5;">
+          <p>Início: <strong>09/09/2024</strong> | Fim: <strong>09/09/2025</strong></p>
+          <p>Prorrogado até: <strong>09/09/2026</strong> | Limite: <strong>09/09/2034</strong></p>
+        </div>
+        <button id="btnTopAction" onclick="cliqueBotaoTopo()" class="btn-sigecofi-edit">
+          ✏️ Editar
+        </button>
+      </div>
+    </div>
+
+    <!-- ABAS -->
+    <div class="nav-tabs">
+      <div class="tab-btn">Dados Gerais</div>
+      <div class="tab-btn">Contratados</div>
+      <div class="tab-btn tab-active">Valores e recursos</div>
+      <div class="tab-btn">Diário</div>
+      <div class="tab-btn">Execução Financeira</div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div class="tab-content">
+      
+      <div class="action-bar">
+        <input type="text" id="inputSearch" oninput="renderizarAtivos()" placeholder="🔍 Pesquisa por valor de recurso ou instrumento..." class="search-box" />
+        <button id="btnNovoRec" onclick="abrirModalNovoRecurso()" class="btn-add-recurso modo-edit hidden">
+          + Adicionar Valor de Recurso
+        </button>
+      </div>
+
+      <!-- SEÇÃO 1: VALORES ATIVOS -->
+      <div>
+        <div class="header-section-bar" style="margin-bottom: 8px;">Valores Contratuais (Ativos)</div>
+        
+        <!-- TOTAL REPOSICIONADO LOGO ABAIXO DO TÍTULO CONFORME SOLICITADO -->
+        <div class="total-bar" style="margin-top: 0; margin-bottom: 16px;">
+          <span>Valor acumulado do contrato:</span>
+          <span id="txtTotalAcumulado" style="color: #005F73; font-size: 13px;">R$ 7.283.567,71</span>
+        </div>
+
+        <div id="containerValores"></div>
+      </div>
+
+      <!-- SEÇÃO 2: RECURSOS INATIVOS (COLAPSADO POR PADRÃO) -->
+      <div class="card-recurso">
+        <div onclick="toggleInativos()" style="background: #f8fafc; color: #005F73; padding: 10px 14px; font-weight: bold; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='#f8fafc'">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span id="iconeInativos"></span>
+            <span>Histórico de Valores de Recursos (Inativos)</span>
+          </div>
+          <span id="qtdInativosText" style="font-weight: normal; color: #64748b;">1 registro(s)</span>
+        </div>
+        <div id="wrapperInativos" class="table-responsive hidden">
+          <div id="containerInativos"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: AÇÕES E AUDITORIA (SALVAR, INATIVAR, EXCLUIR) -->
+  <div id="modalConfirmacao" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 500px;">
+      <button onclick="fecharModalConfirmacao()" class="modal-close-x" title="Cancelar">×</button>
+      <div id="modalConfirmTitle" class="modal-title">Confirmar Ação</div>
+      <div id="modalConfirmDesc" class="modal-desc">Tem certeza?</div>
+
+      <div id="modalAuditSection" class="audit-box hidden">
+        <div class="audit-title">Dados da auditoria</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group" style="margin:0;">
+            <label>Responsável</label>
+            <input type="text" value="Guilherme Alves Braga" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label>Data e Hora</label>
+            <input type="text" id="inputAuditData" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+          </div>
+        </div>
+        <div id="modalConfirmMotivoGroup" class="form-group" style="margin:0;">
+          <label for="inputMotivo">Motivo do registro (Obrigatório):</label>
+          <textarea id="inputMotivo" class="textarea-motivo" rows="3" placeholder="Descreva o motivo desta ação..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="fecharModalConfirmacao()" class="btn-modal-sec">Não</button>
+        <button id="btnConfirmarAcao" onclick="executarAcaoConfirmada()" class="btn-modal-pri">Sim</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LER OBSERVAÇÃO -->
+  <div id="modalLerObservacao" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button onclick="fecharModalObservacao()" class="modal-close-x" title="Fechar">×</button>
+      <div class="modal-title">📄 Observação Completa</div>
+      <div class="form-group">
+        <textarea id="textoModalObservacao" class="textarea-motivo" rows="6" readonly style="background:#f1f5f9; color:#475569;"></textarea>
+      </div>
+      <div class="modal-actions" style="justify-content: space-between;">
+        <button onclick="copiarDoModalObservacao()" class="btn-modal-pri" style="background: #16a34a; display:flex; align-items:center; gap:4px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Copiar Observação
+        </button>
+        <button onclick="fecharModalObservacao()" class="btn-modal-sec">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VER MOTIVO (AUDITORIA DOS INATIVOS) -->
+  <div id="modalVerMotivo" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 500px;">
+      <button onclick="fecharModalMotivo()" class="modal-close-x" title="Fechar">×</button>
+      <div class="modal-title">📋 Detalhes da Ação</div>
+      <div class="modal-desc">Informações de auditoria sobre o recurso inativado:</div>
+      
+      <div class="audit-box" style="margin-top: 0;">
+        <div class="audit-title">Dados da auditoria</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group" style="margin:0;">
+            <label>Responsável</label>
+            <input type="text" id="viewMotivoOperador" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label>Data e Hora</label>
+            <input type="text" id="viewMotivoData" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+          </div>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label>Motivo Registrado:</label>
+          <textarea id="viewMotivoTexto" class="textarea-motivo" rows="4" readonly style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SELEÇÃO DE PROJETO -->
+  <div id="modalSelectProjeto" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button onclick="fecharModalProjeto()" class="modal-close-x" title="Cancelar">×</button>
+      <div class="modal-title">📌 Adicionar Nova Fração</div>
+      <div class="modal-desc">Escolha a qual projeto esta nova fração pertencerá:</div>
+      
+      <div class="form-group">
+        <label for="selectProjetoExistente">Selecione o Projeto:</label>
+        <select id="selectProjetoExistente" onchange="toggleNovoProjInput(this.value)" class="input-text" style="background: #fff; font-weight: bold; color: #005F73;">
+        </select>
+      </div>
+
+      <div id="groupNovoProjCode" class="form-group hidden">
+        <label for="inputNovoProjCode">Código do Novo Projeto:</label>
+        <input type="text" id="inputNovoProjCode" placeholder="Ex: 3924" class="input-text" />
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="fecharModalProjeto()" class="btn-modal-sec">Cancelar</button>
+        <button onclick="confirmarAdicionarFracao()" class="btn-modal-pri">Confirmar e Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO VALOR DE RECURSO (COMPLETO) -->
+  <div id="modalNovoRecurso" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 600px;">
+      <button onclick="fecharModalNovoRecurso()" class="modal-close-x" title="Cancelar">×</button>
+      <div class="modal-title">➕ Adicionar Valor de Recurso</div>
+      <div class="modal-desc">Preencha os dados contratuais do novo instrumento:</div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label>Valor Atualizado (R$):</label>
+          <input type="text" id="inputNewValorAtu" oninput="applyCurrencyMask(this)" placeholder="Ex: R$ 100.000,00" class="input-text" />
+        </div>
+        <div class="form-group">
+          <label>Valor Proporcional (R$):</label>
+          <input type="text" id="inputNewValorProp" oninput="applyCurrencyMask(this)" placeholder="Ex: R$ 100.000,00" class="input-text" />
+        </div>
+        <div class="form-group">
+          <label>Periodicidade:</label>
+          <select id="selectNewPeriodicidade" class="input-text" style="background: #fff;">
+            <option value="Selecione...">Selecione...</option>
+            <option value="Mensal">Mensal</option>
+            <option value="Trimestral">Trimestral</option>
+            <option value="Semestral">Semestral</option>
+            <option value="Anual">Anual</option>
+            <option value="Unitário">Unitário</option>
+            <option value="Escopo">Escopo</option>
+            <option value="SEM CUSTOS">SEM CUSTOS</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Instrumento:</label>
+          <select id="selectNewInstrumento" class="input-text" style="background: #fff;">
+            <option value="Selecione...">Selecione...</option>
+            <option value="Apostila">Apostila</option>
+            <option value="Aditivo (Alteração Quantitativo)">Aditivo (Alteração Quantitativo)</option>
+            <option value="Aditivo (Alteração Valor)">Aditivo (Alteração Valor)</option>
+            <option value="Aditivo (Alterações Diversas)">Aditivo (Alterações Diversas)</option>
+            <option value="Aditivo (Prorrogação)">Aditivo (Prorrogação)</option>
+            <option value="Aditivo (Repactuação)">Aditivo (Repactuação)</option>
+            <option value="Aditivo">Aditivo</option>
+            <option value="Contrato Original">Contrato Original</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Início:</label>
+          <input type="text" id="inputNewInicio" oninput="applyDateMask(this)" placeholder="DD/MM/AAAA" class="input-text" />
+        </div>
+        <div class="form-group">
+          <label>Fim:</label>
+          <input type="text" id="inputNewFim" oninput="applyDateMask(this)" placeholder="DD/MM/AAAA" class="input-text" />
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label>Número do Instrumento:</label>
+          <input type="text" id="inputNewNumero" placeholder="Ex: 2" class="input-text" />
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 16px;">
+        <button onclick="fecharModalNovoRecurso()" class="btn-modal-sec">Cancelar</button>
+        <button onclick="confirmarNovoRecurso()" class="btn-modal-pri">Confirmar e Criar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VÍNCULO COM O JAVASCRIPT EXTERNO -->
+  <script src="script.js"></script>
+</body>
+</html>
