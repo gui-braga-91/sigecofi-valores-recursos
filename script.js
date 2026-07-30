@@ -1,4 +1,8 @@
+// ====================================================
+// VARIÁVEIS DE ESTADO GLOBAL
+// ====================================================
 let modo = 'visualizar';
+let abaAtiva = 'valores'; 
 let parentRecursoAtivoId = null;
 let acaoPendente = null;
 let inativosExpandido = false;
@@ -14,7 +18,7 @@ const iconCopy = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" st
 const iconEye = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
 const iconRefresh = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><polyline points="23 20 23 14 17 14"></polyline><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>`;
 
-// SISTEMA DE TOAST
+// UTILITÁRIOS GERAIS
 function mostrarToast(mensagem) {
   const toast = document.getElementById('toastBox');
   if(!toast) return;
@@ -23,7 +27,6 @@ function mostrarToast(mensagem) {
   setTimeout(() => { toast.classList.remove('show'); }, 2000);
 }
 
-// FUNÇÕES DE MÁSCARA AUTOMÁTICA E CÁLCULO REATIVO
 function formatarMoedaBR(valor) {
   return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -52,7 +55,6 @@ function applyPeriodMask(el) {
   let v = el.value.replace(/\D/g, '').slice(0, 16);
   let part1 = v.slice(0, 8);
   let part2 = v.slice(8, 16);
-
   function formatD(d) {
     if (d.length >= 5) return d.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
     if (d.length >= 3) return d.replace(/(\d{2})(\d{1,2})/, '$1/$2');
@@ -95,6 +97,132 @@ function copyGroupInput(id, val, oninputFunc, placeholder = "") {
       <button type="button" class="btn-copy-addon" onclick="copyToClipboard(this.previousElementSibling.value, this)" title="Copiar">${iconCopy}</button>
     </div>`;
 }
+
+// ====================================================
+// NAVEGAÇÃO DE ABAS E MODOS
+// ====================================================
+function mudarAba(aba) {
+  abaAtiva = aba;
+  
+  document.getElementById('tab-valores').classList.remove('tab-active');
+  document.getElementById('tab-execucao').classList.remove('tab-active');
+  document.getElementById('content-valores').classList.add('hidden');
+  document.getElementById('content-execucao').classList.add('hidden');
+
+  if(aba === 'valores') {
+    document.getElementById('tab-valores').classList.add('tab-active');
+    document.getElementById('content-valores').classList.remove('hidden');
+  } else if(aba === 'execucao') {
+    document.getElementById('tab-execucao').classList.add('tab-active');
+    document.getElementById('content-execucao').classList.remove('hidden');
+  }
+  
+  renderizar();
+}
+
+function alternarModoGeral(modoAtual) {
+  modo = modoAtual;
+  const isEdit = modo === 'editar';
+
+  document.getElementById('simVis').className = isEdit ? 'btn-sim btn-sim-off' : 'btn-sim btn-sim-active';
+  document.getElementById('simEdit').className = isEdit ? 'btn-sim btn-sim-active' : 'btn-sim btn-sim-off';
+
+  const hVis = document.getElementById('headerVis');
+  const hEdit = document.getElementById('headerEdit');
+  const bNovo = document.getElementById('btnNovoRec');
+  const bEmp = document.getElementById('btnNovoEmpenho');
+
+  if(hVis) hVis.classList.toggle('hidden', isEdit);
+  if(hEdit) hEdit.classList.toggle('hidden', !isEdit);
+  if(bNovo) bNovo.classList.toggle('hidden', !isEdit);
+  if(bEmp) bEmp.classList.toggle('hidden', !isEdit);
+
+  if (!isEdit) {
+    recursosAtivos.forEach(r => {
+      r.editando = false;
+      r.fracoes.forEach(f => f.editando = false);
+    });
+    empenhosAtivos.forEach(e => {
+      e.editando = false;
+      e.parcelas.forEach(p => p.editando = false);
+    });
+  }
+
+  renderizar();
+}
+
+function cliqueBotaoTopo() {
+  alternarModoGeral(modo === 'editar' ? 'visualizar' : 'editar');
+}
+
+function renderizar() {
+  if(abaAtiva === 'valores') {
+    renderizarValoresAtivos();
+    renderizarInativos();
+  } else {
+    renderizarExecucaoFinanceira();
+  }
+  initResizableColumns();
+}
+
+// ====================================================
+// LÓGICA DA ABA 1: VALORES E RECURSOS
+// ====================================================
+let recursosAtivos = [
+  {
+    id: 'r1',
+    valorAtualizado: 3773692.51,
+    periodicidade: 'Anual',
+    inicio: '09/09/2025',
+    fim: '08/09/2026',
+    valorProporcional: 2000.00,
+    instrumento: 'Aditivo',
+    numero: '1',
+    origem: 'Automático',
+    expandido: true,
+    editando: false,
+    projetosExpandidos: { '3920': true, '3921': false, '3922': false, '3923': false },
+    fracoes: [
+      { id: 'f1', projeto: '3920', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: 'Fração referente ao serviço prestado no datacenter principal.', editando: false },
+      { id: 'f2', projeto: '3921', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: '', editando: false },
+      { id: 'f3', projeto: '3922', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
+      { id: 'f4', projeto: '3923', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
+      { id: 'f5', projeto: '3923', uo: '1490', recurso: '4169', nad: '4.4.90.52.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false }
+    ]
+  },
+  {
+    id: 'r2',
+    valorAtualizado: 3509875.20,
+    periodicidade: 'Não informado',
+    inicio: '09/09/2024',
+    fim: '09/09/2026',
+    valorProporcional: 3509875.20,
+    instrumento: 'Contrato Original',
+    numero: '24/04/058',
+    origem: 'Automático',
+    expandido: false,
+    editando: false,
+    projetosExpandidos: {},
+    fracoes: []
+  }
+];
+
+let recursosInativos = [
+  {
+    id: 'i1',
+    valorAtualizado: 0.00,
+    periodicidade: 'SEM CUSTOS',
+    inicio: '01/01/2025',
+    fim: '31/12/2026',
+    valorProporcional: 0.00,
+    instrumento: 'Apostila',
+    numero: '1',
+    origem: 'Manual',
+    motivoAuditoria: 'Término de vigência contratual.',
+    dataAcao: '25/07/2026 14:30',
+    operador: 'Guilherme Alves Braga'
+  }
+];
 
 function syncFractionFromPct(pId, fId, pCode, el) {
   const p = recursosAtivos.find(x => x.id === pId);
@@ -155,119 +283,7 @@ function atualizarTotaisProjetoDOM(pId, pCode) {
   }
 }
 
-function getOptionsPeriodicidade(selected) {
-  const opts = ["Selecione...", "Mensal", "Trimestral", "Semestral", "Anual", "Unitário", "Escopo", "SEM CUSTOS"];
-  return opts.map(o => `<option value="${o}" ${selected === o ? 'selected' : ''}>${o}</option>`).join('');
-}
-
-function getOptionsInstrumento(selected) {
-  const opts = ["Selecione...", "Apostila", "Aditivo (Alteração Quantitativo)", "Aditivo (Alteração Valor)", "Aditivo (Alterações Diversas)", "Aditivo (Prorrogação)", "Aditivo (Repactuação)", "Aditivo", "Contrato Original"];
-  return opts.map(o => `<option value="${o}" ${selected === o ? 'selected' : ''}>${o}</option>`).join('');
-}
-
-let recursosAtivos = [
-  {
-    id: 'r1',
-    valorAtualizado: 3773692.51,
-    periodicidade: 'Anual',
-    inicio: '09/09/2025',
-    fim: '08/09/2026',
-    valorProporcional: 2000.00,
-    instrumento: 'Aditivo',
-    numero: '1',
-    origem: 'Automático',
-    expandido: true,
-    editando: false,
-    projetosExpandidos: { '3920': true, '3921': false, '3922': false, '3923': false },
-    fracoes: [
-      { id: 'f1', projeto: '3920', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: 'Fração referente ao serviço prestado no datacenter principal.', editando: false },
-      { id: 'f2', projeto: '3921', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: '', editando: false },
-      { id: 'f3', projeto: '3922', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
-      { id: 'f4', projeto: '3923', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
-      { id: 'f5', projeto: '3923', uo: '1490', recurso: '4169', nad: '4.4.90.52.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false }
-    ]
-  },
-  {
-    id: 'r2',
-    valorAtualizado: 3509875.20,
-    periodicidade: 'Não informado',
-    inicio: '09/09/2024',
-    fim: '09/09/2026',
-    valorProporcional: 3509875.20,
-    instrumento: 'Contrato Original',
-    numero: '24/04/058',
-    origem: 'Automático',
-    expandido: false,
-    editando: false,
-    projetosExpandidos: {},
-    fracoes: []
-  }
-];
-
-let recursosInativos = [
-  {
-    id: 'i1',
-    valorAtualizado: 0.00,
-    periodicidade: 'SEM CUSTOS',
-    inicio: '01/01/2025',
-    fim: '31/12/2026',
-    valorProporcional: 0.00,
-    instrumento: 'Apostila',
-    numero: '1',
-    origem: 'Manual',
-    motivoAuditoria: 'Término de vigência contratual.',
-    dataAcao: '25/07/2026 14:30',
-    operador: 'Guilherme Alves Braga'
-  }
-];
-
-// CONTROLE DE HISTÓRICO INATIVO
-function toggleInativos() {
-  inativosExpandido = !inativosExpandido;
-  renderizarInativos();
-}
-
-function alternarModo(novoModo) {
-  modo = novoModo;
-  const isEdit = modo === 'editar';
-
-  const hVis = document.getElementById('headerVis');
-  const hEdit = document.getElementById('headerEdit');
-  const bNovo = document.getElementById('btnNovoRec');
-  const btnTop = document.getElementById('btnTopAction');
-
-  if(hVis) hVis.classList.toggle('hidden', isEdit);
-  if(hEdit) hEdit.classList.toggle('hidden', !isEdit);
-  if(bNovo) bNovo.classList.toggle('hidden', !isEdit);
-
-  if (btnTop) {
-    if (isEdit) {
-      btnTop.className = 'btn-sigecofi-vis';
-      btnTop.innerHTML = '👁️ Visualizar';
-    } else {
-      btnTop.className = 'btn-sigecofi-edit';
-      btnTop.innerHTML = '✏️ Editar';
-      recursosAtivos.forEach(r => {
-        r.editando = false;
-        r.fracoes.forEach(f => f.editando = false);
-      });
-    }
-  }
-
-  renderizar();
-}
-
-function cliqueBotaoTopo() {
-  alternarModo(modo === 'editar' ? 'visualizar' : 'editar');
-}
-
-function renderizar() {
-  renderizarAtivos();
-  renderizarInativos();
-  initResizableColumns();
-}
-
-function renderizarAtivos() {
+function renderizarValoresAtivos() {
   const container = document.getElementById('containerValores');
   if(!container) return;
   container.innerHTML = '';
@@ -514,7 +530,7 @@ function renderizarInativos() {
             <td>${formatarMoedaBR(i.valorProporcional)}</td>
             <td>${i.instrumento}</td>
             <td>${i.numero}</td>
-            <td><span style="background:#e2e8f0; padding:2px 6px; border-radius:3px; font-weight:bold; font-size:10px;">${i.origem}</span></td>
+            <td><span style="background:#e2e8f0; padding:2px 6px; border-radius:3px; font-size:10px;">${i.origem}</span></td>
             <td style="text-align:center; white-space:nowrap;">
               <div style="display:inline-flex; gap:6px; align-items:center; justify-content:center; width: 100%;">
                 <button onclick="abrirModalMotivo('${i.id}')" class="btn-square-gray" title="Ver Motivo da Inativação">${iconEye}</button>
@@ -528,191 +544,31 @@ function renderizarInativos() {
   `;
 }
 
-// REDIMENSIONAMENTO DE COLUNAS DA TABELA
-function initResizableColumns() {
-  const tables = document.querySelectorAll('.resizable-table');
-  tables.forEach(table => {
-    const ths = table.querySelectorAll('th');
-    ths.forEach(th => {
-      if(th.querySelector('.resizer')) return;
-      const resizer = document.createElement('div');
-      resizer.classList.add('resizer');
-      th.appendChild(resizer);
-      
-      let startX, startW;
-      
-      resizer.addEventListener('mousedown', function(e) {
-        startX = e.clientX;
-        startW = th.offsetWidth;
-        resizer.classList.add('resizing');
-        
-        const mouseMoveHandler = function(evt) {
-          const newWidth = startW + (evt.clientX - startX);
-          th.style.width = `${newWidth}px`;
-          th.style.minWidth = `${newWidth}px`;
-        };
-        
-        const mouseUpHandler = function() {
-          resizer.classList.remove('resizing');
-          document.removeEventListener('mousemove', mouseMoveHandler);
-          document.removeEventListener('mouseup', mouseUpHandler);
-        };
-        
-        document.addEventListener('mousemove', mouseMoveHandler);
-        document.addEventListener('mouseup', mouseUpHandler);
-      });
-    });
-  });
+function toggleInativos() {
+  inativosExpandido = !inativosExpandido;
+  renderizarInativos();
 }
 
-// MODAL GLOBAL DE CONFIRMAÇÃO
-function abrirConfirmacao(tipo, pId, fId = null) {
-  acaoPendente = { tipo, pId, fId };
-  const titulo = document.getElementById('modalConfirmTitle');
-  const desc = document.getElementById('modalConfirmDesc');
-  const auditSection = document.getElementById('modalAuditSection');
-  const btnConfirmar = document.getElementById('btnConfirmarAcao');
+function toggleE(id) {
+  const v = recursosAtivos.find(x => x.id === id);
+  if (v) v.expandido = !v.expandido;
+  renderizarValoresAtivos();
+}
 
-  const inputMotivo = document.getElementById('inputMotivo');
-  if(inputMotivo) inputMotivo.value = '';
-  
-  const now = new Date();
-  const inputAuditData = document.getElementById('inputAuditData');
-  if(inputAuditData) inputAuditData.value = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-
-  if (tipo === 'excluir_pai' || tipo === 'excluir_fracao') {
-    if(titulo) titulo.innerHTML = '🗑️ Confirmar Exclusão';
-    if(desc) desc.innerHTML = 'Você deseja realmente excluir esta informação? Esta ação ficará registrada.';
-    if(auditSection) auditSection.classList.remove('hidden');
-    if(btnConfirmar) {
-      btnConfirmar.className = 'btn-modal-danger';
-      btnConfirmar.innerHTML = 'Excluir';
-    }
-  } else if (tipo === 'inativar_pai') {
-    if(titulo) titulo.innerHTML = '⚠️ Confirmar Inativação';
-    if(desc) desc.innerHTML = 'Você deseja inativar este recurso? Ele será movido para o histórico de inativos.';
-    if(auditSection) auditSection.classList.remove('hidden');
-    if(btnConfirmar) {
-      btnConfirmar.className = 'btn-modal-danger';
-      btnConfirmar.innerHTML = 'Inativar';
-    }
-  } else if (tipo === 'salvar_pai' || tipo === 'salvar_fracao') {
-    if(titulo) titulo.innerHTML = '💾 Salvar Alterações';
-    if(desc) desc.innerHTML = 'Você deseja finalizar a edição e salvar essas alterações?';
-    if(auditSection) auditSection.classList.add('hidden');
-    if(btnConfirmar) {
-      btnConfirmar.className = 'btn-modal-pri';
-      btnConfirmar.innerHTML = 'Sim, Salvar';
-    }
+function toggleProjExpand(rId, pCode) {
+  const r = recursosAtivos.find(x => x.id === rId);
+  if(r) {
+    if (!r.projetosExpandidos) r.projetosExpandidos = {};
+    r.projetosExpandidos[pCode] = !r.projetosExpandidos[pCode];
+    renderizarValoresAtivos();
   }
-
-  const modalConf = document.getElementById('modalConfirmacao');
-  if(modalConf) modalConf.classList.remove('hidden');
 }
 
-function fecharModalConfirmacao() {
-  const modalConf = document.getElementById('modalConfirmacao');
-  if(modalConf) modalConf.classList.add('hidden');
-  acaoPendente = null;
-}
-
-function executarAcaoConfirmada() {
-  if (!acaoPendente) return;
-  const { tipo, pId, fId } = acaoPendente;
-  const auditSection = document.getElementById('modalAuditSection');
-  const inputMotivo = document.getElementById('inputMotivo');
-
-  if (auditSection && !auditSection.classList.contains('hidden') && inputMotivo && inputMotivo.value.trim() === '') {
-    alert('Por favor, preencha o motivo para prosseguir (obrigatório para auditoria).');
-    return;
-  }
-
-  if (tipo === 'excluir_pai') {
-    recursosAtivos = recursosAtivos.filter(x => x.id !== pId);
-    mostrarToast("Recurso excluído com sucesso.");
-  } 
-  else if (tipo === 'excluir_fracao') {
-    const p = recursosAtivos.find(x => x.id === pId);
-    if (p) p.fracoes = p.fracoes.filter(x => x.id !== fId);
-    mostrarToast("Fração excluída com sucesso.");
-  } 
-  else if (tipo === 'inativar_pai') {
-    const idx = recursosAtivos.findIndex(x => x.id === pId);
-    if (idx !== -1) {
-      const item = recursosAtivos.splice(idx, 1)[0];
-      item.editando = false;
-      item.motivoAuditoria = inputMotivo ? inputMotivo.value.trim() || 'Não informado' : 'Não informado';
-      const inputAuditData = document.getElementById('inputAuditData');
-      item.dataAcao = inputAuditData ? inputAuditData.value : '';
-      item.operador = 'Guilherme Alves Braga'; 
-      
-      recursosInativos.push(item);
-      mostrarToast("Recurso inativado com sucesso.");
-    }
-  } 
-  else if (tipo === 'salvar_pai') {
-    salvarEdicaoPai(pId);
-  } 
-  else if (tipo === 'salvar_fracao') {
-    salvarEdicaoFracao(pId, fId);
-  }
-
-  fecharModalConfirmacao();
-  renderizar();
-}
-
-// MODAL DE VISUALIZAR MOTIVO (INATIVOS)
-function abrirModalMotivo(id) {
-  const item = recursosInativos.find(x => x.id === id);
-  if(!item) return;
-
-  const vData = document.getElementById('viewMotivoData');
-  const vOp = document.getElementById('viewMotivoOperador');
-  const vTxt = document.getElementById('viewMotivoTexto');
-
-  if(vData) vData.value = item.dataAcao || 'Não registrada';
-  if(vOp) vOp.value = item.operador || 'Sistema';
-  if(vTxt) vTxt.value = item.motivoAuditoria || 'Motivo não informado.';
-
-  const modalM = document.getElementById('modalVerMotivo');
-  if(modalM) modalM.classList.remove('hidden');
-}
-
-function fecharModalMotivo() {
-  const modalM = document.getElementById('modalVerMotivo');
-  if(modalM) modalM.classList.add('hidden');
-}
-
-// MODAL DE OBSERVAÇÃO
-function abrirModalObservacao(pId, fId) {
-  const p = recursosAtivos.find(x => x.id === pId);
-  const f = p?.fracoes.find(x => x.id === fId);
-  if (!f) return;
-  const obsTexto = f.obs || 'Nenhuma observação registrada.';
-  const txtObs = document.getElementById('textoModalObservacao');
-  if(txtObs) txtObs.value = obsTexto;
-  
-  const modalObs = document.getElementById('modalLerObservacao');
-  if(modalObs) modalObs.classList.remove('hidden');
-}
-
-function fecharModalObservacao() {
-  const modalObs = document.getElementById('modalLerObservacao');
-  if(modalObs) modalObs.classList.add('hidden');
-}
-
-function copiarDoModalObservacao() {
-  const texto = document.getElementById('textoModalObservacao').value;
-  navigator.clipboard.writeText(texto).then(() => {
-    mostrarToast("Observação copiada com sucesso!");
-  });
-}
-
-// FUNÇÕES DE EDIÇÃO
+// EDIÇÃO DE RECURSOS ABA 1
 function ativarEdicaoPai(id) {
   const r = recursosAtivos.find(x => x.id === id);
   if (r) r.editando = true;
-  renderizar();
+  renderizarValoresAtivos();
 }
 
 function salvarEdicaoPai(id) {
@@ -742,7 +598,7 @@ function ativarEdicaoFracao(pId, fId) {
   const p = recursosAtivos.find(x => x.id === pId);
   const f = p?.fracoes.find(x => x.id === fId);
   if (f) f.editando = true;
-  renderizar();
+  renderizarValoresAtivos();
 }
 
 function salvarEdicaoFracao(pId, fId) {
@@ -771,16 +627,388 @@ function salvarEdicaoFracao(pId, fId) {
   }
 }
 
-function toggleProjExpand(rId, pCode) {
-  const r = recursosAtivos.find(x => x.id === rId);
-  if(r) {
-    if (!r.projetosExpandidos) r.projetosExpandidos = {};
-    r.projetosExpandidos[pCode] = !r.projetosExpandidos[pCode];
-    renderizar();
+// ====================================================
+// LÓGICA DA ABA 2: EXECUÇÃO FINANCEIRA E LIQUIDAÇÕES
+// ====================================================
+let valorOriginalContratoDadosGerais = 1000.00;
+
+let empenhosAtivos = [
+  {
+    id: 'emp1',
+    projeto: '3920',
+    area: 'DETIC',
+    numeroEmpenho: '25000100',
+    nad: '3.3.90.40.0000',
+    valorEmpenhado: 200.00,
+    saldoDisponivel: 10.00,
+    expandido: true,
+    editando: false,
+    parcelas: [
+      { id: 'par1', valorParcela: 180.00, comp: '05/2026', processo: '26/1400-9002627-3', valorLiquidado: 170.00, saldoNaoExecutavel: 10.00, checked: true, instrumento: 'Contrato Original', editando: false },
+      { id: 'par2', valorParcela: 10.00, comp: '06/2026', processo: '26/1400-9001482-8', valorLiquidado: 9.00, saldoNaoExecutavel: 1.00, checked: false, instrumento: 'Aditivo 1', editando: false }
+    ]
+  },
+  {
+    id: 'emp2',
+    projeto: '3921',
+    area: 'Tesouro',
+    numeroEmpenho: '25000200',
+    nad: '3.3.90.40.0000',
+    valorEmpenhado: 400.00,
+    saldoDisponivel: 400.00,
+    expandido: false,
+    editando: false,
+    parcelas: []
+  }
+];
+
+function recalcularCardsExecucao() {
+  let valAcumulado = 1000.00;
+  let totalEmpenhado = empenhosAtivos.reduce((s, e) => s + e.valorEmpenhado, 0);
+  let valAEmpenhar = valAcumulado - totalEmpenhado; if(valAEmpenhar < 0) valAEmpenhar = 0;
+  
+  let totalLiquidado = 0;
+  let totalSaldoNaoExecutavel = 0;
+
+  empenhosAtivos.forEach(e => {
+    e.parcelas.forEach(p => {
+      totalLiquidado += p.valorLiquidado;
+      if(p.checked) {
+        totalSaldoNaoExecutavel += p.saldoNaoExecutavel;
+      }
+    });
+  });
+
+  let valAExecutar = valAcumulado - totalLiquidado; if(valAExecutar < 0) valAExecutar = 0;
+  let saldoAcrescimo = valorOriginalContratoDadosGerais * 0.25;
+
+  const c1 = document.getElementById('cardValAcumulado');
+  const c2 = document.getElementById('cardValEmpenhado');
+  const c3 = document.getElementById('cardValAEmpenhar');
+  const c4 = document.getElementById('cardValAExecutar');
+  const c5 = document.getElementById('cardSaldoNaoExecutavel');
+  const c6 = document.getElementById('cardSaldoAcrescimo');
+  const c7 = document.getElementById('cardValLiquidado');
+
+  if(c1) c1.textContent = formatarMoedaBR(valAcumulado);
+  if(c2) c2.textContent = formatarMoedaBR(totalEmpenhado);
+  if(c3) c3.textContent = formatarMoedaBR(valAEmpenhar);
+  if(c4) c4.textContent = formatarMoedaBR(valAExecutar);
+  if(c5) c5.textContent = formatarMoedaBR(totalSaldoNaoExecutavel);
+  if(c6) c6.textContent = formatarMoedaBR(saldoAcrescimo);
+  if(c7) c7.textContent = formatarMoedaBR(totalLiquidado);
+}
+
+function toggleParcelaCheck(empId, parcelaId) {
+  const emp = empenhosAtivos.find(e => e.id === empId);
+  if(!emp) return;
+  const par = emp.parcelas.find(p => p.id === parcelaId);
+  if(!par) return;
+
+  par.checked = !par.checked;
+  renderizarExecucaoFinanceira(); 
+  mostrarToast("Saldo não executável atualizado!");
+}
+
+function toggleEmpenhoExpand(empId) {
+  const emp = empenhosAtivos.find(e => e.id === empId);
+  if(emp) {
+    emp.expandido = !emp.expandido;
+    renderizarExecucaoFinanceira();
   }
 }
 
-// MODAL DE PROJETO
+function renderizarExecucaoFinanceira() {
+  recalcularCardsExecucao();
+  const container = document.getElementById('containerExecucao');
+  if(!container) return;
+  container.innerHTML = '';
+
+  const isEditGlobal = modo === 'editar';
+  const searchInput = document.getElementById('inputSearchExec');
+  const termoBusca = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+  const listaFiltrada = empenhosAtivos.filter(e => 
+    e.projeto.toLowerCase().includes(termoBusca) ||
+    e.numeroEmpenho.toLowerCase().includes(termoBusca) ||
+    e.nad.toLowerCase().includes(termoBusca)
+  );
+
+  if(listaFiltrada.length === 0) {
+    container.innerHTML = `<div style="padding:16px; text-align:center; color:#94a3b8; font-style:italic; background:#fff; border:1px solid #cbd5e1; border-radius:6px;">Nenhum empenho cadastrado.</div>`;
+    return;
+  }
+
+  listaFiltrada.forEach(emp => {
+    const card = document.createElement('div');
+    card.className = 'card-recurso';
+    const lEditE = isEditGlobal && emp.editando;
+    const chevronIcon = emp.expandido ? iconChevronDown : iconChevronRight;
+
+    let htmlSub = '';
+    if(emp.expandido) {
+      htmlSub = `
+        <div class="sub-container">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <span style="font-weight:bold; color:#005F73;">DETALHAMENTO DE PARCELAS / LIQUIDAÇÕES</span>
+            ${isEditGlobal ? `<button onclick="adicionarParcela('${emp.id}')" class="btn-sigecofi-edit" style="font-size:11px; padding:4px 10px;">+ Adicionar Parcela</button>` : ''}
+          </div>
+          <div class="table-responsive">
+            <table class="resizable-table" style="min-width: 900px; background:#fff; border: 1px solid #c0dde5;">
+              <thead>
+                <tr style="background:#f8fafc; color:#334155;">
+                  <th style="width:12%;">Valor Parcela</th>
+                  <th style="width:12%;">Competência</th>
+                  <th style="width:16%;">Processo</th>
+                  <th style="width:18%;">Valor Liquidado / Faturado</th>
+                  <th style="width:18%;">Saldo não Executável</th>
+                  <th style="width:14%;">Instrumento</th>
+                  ${isEditGlobal ? '<th style="text-align:center; width:10%;">Ações</th>' : ''}
+                </tr>
+              </thead>
+              <tbody>
+                ${emp.parcelas.map((p) => {
+                  const lEditF = isEditGlobal && p.editando;
+                  return `
+                  <tr>
+                    <td>${lEditF ? `<input type="text" id="p_valPar_${p.id}" value="${formatarMoedaBR(p.valorParcela)}" oninput="applyCurrencyMask(this)" class="input-plain">` : `<strong>${formatarMoedaBR(p.valorParcela)}</strong>`}</td>
+                    <td>${lEditF ? `<input type="text" id="p_comp_${p.id}" value="${p.comp}" oninput="applyDateMask(this)" class="input-plain">` : p.comp}</td>
+                    <td>${lEditF ? copyGroupInput(`p_proc_${p.id}`, p.processo, '') : `${p.processo} ${copyBtnView(p.processo)}`}</td>
+                    <td>${lEditF ? `<input type="text" id="p_valLiq_${p.id}" value="${formatarMoedaBR(p.valorLiquidado)}" oninput="applyCurrencyMask(this)" class="input-plain">` : `<strong>${formatarMoedaBR(p.valorLiquidado)}</strong>`}</td>
+                    <td>
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        <input type="checkbox" class="chk-executavel" ${p.checked ? 'checked' : ''} onchange="toggleParcelaCheck('${emp.id}', '${p.id}')" ${lEditF ? 'disabled' : ''} />
+                        ${lEditF ? `<input type="text" id="p_saldoNe_${p.id}" value="${formatarMoedaBR(p.saldoNaoExecutavel)}" oninput="applyCurrencyMask(this)" class="input-plain" style="width:80px;">` : `<span>${formatarMoedaBR(p.saldoNaoExecutavel)}</span>`}
+                      </div>
+                    </td>
+                    <td>${lEditF ? `<input type="text" id="p_inst_${p.id}" value="${p.instrumento}" class="input-plain">` : p.instrumento}</td>
+                    ${isEditGlobal ? `
+                      <td style="text-align:center; white-space:nowrap;">
+                        <button onclick="abrirConfirmacao('excluir_parcela', '${emp.id}', '${p.id}')" class="btn-square-orange" title="Excluir Parcela">${iconTrash}</button>
+                        ${p.editando 
+                          ? `<button onclick="abrirConfirmacao('salvar_parcela', '${emp.id}', '${p.id}')" class="btn-square-green" title="Confirmar Salvar">${iconCheck}</button>`
+                          : `<button onclick="ativarEdicaoParcela('${emp.id}', '${p.id}')" class="btn-square-teal" title="Editar Parcela">${iconPencil}</button>`}
+                      </td>
+                    ` : ''}
+                  </tr>
+                `}).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    card.innerHTML = `
+      <div class="table-responsive">
+        <table class="resizable-table" style="border-bottom: ${emp.expandido ? '1px solid #e2e8f0' : 'none'};">
+          <thead>
+            <tr>
+              <th style="width:10%;">Projeto</th>
+              <th style="width:10%;">Área</th>
+              <th style="width:16%;">Nº Empenho</th>
+              <th style="width:14%;">NAD</th>
+              <th style="width:16%;">Valor Empenhado</th>
+              <th style="width:16%;">Saldo Disponível</th>
+              <th style="text-align:center; width:18%;">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#fff;">
+              <td>${lEditE ? `<input type="text" id="e_proj_${emp.id}" value="${emp.projeto}" class="input-plain">` : `<strong>${emp.projeto}</strong>`}</td>
+              <td>${lEditE ? `<input type="text" id="e_area_${emp.id}" value="${emp.area}" class="input-plain">` : emp.area}</td>
+              <td>${lEditE ? copyGroupInput(`e_num_${emp.id}`, emp.numeroEmpenho, '') : `${emp.numeroEmpenho} ${copyBtnView(emp.numeroEmpenho)}`}</td>
+              <td>${lEditE ? copyGroupInput(`e_nad_${emp.id}`, emp.nad, 'applyNADMask(this)') : emp.nad}</td>
+              <td>${lEditE ? `<input type="text" id="e_val_${emp.id}" value="${formatarMoedaBR(emp.valorEmpenhado)}" oninput="applyCurrencyMask(this)" class="input-plain">` : `<strong>${formatarMoedaBR(emp.valorEmpenhado)}</strong>`}</td>
+              <td><strong style="color:#166534;">${formatarMoedaBR(emp.saldoDisponivel)}</strong></td>
+              <td style="text-align:center; white-space:nowrap;">
+                <div style="display:inline-flex; gap:6px; align-items:center; justify-content:center; width:100%;">
+                  ${isEditGlobal ? `<button onclick="abrirConfirmacao('excluir_empenho', '${emp.id}')" class="btn-square-orange" title="Excluir Empenho">${iconTrash}</button>` : ''}
+                  ${isEditGlobal ? `
+                    ${emp.editando
+                      ? `<button onclick="abrirConfirmacao('salvar_empenho', '${emp.id}')" class="btn-square-green" title="Confirmar e Salvar">${iconCheck}</button>`
+                      : `<button onclick="ativarEdicaoEmpenho('${emp.id}')" class="btn-square-teal" title="Editar Empenho">${iconPencil}</button>`
+                    }
+                  ` : ''}
+                  <button onclick="toggleEmpenhoExpand('${emp.id}')" class="btn-square-teal" title="Expandir/Recolher Detalhes">${chevronIcon}</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      ${htmlSub}
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+function ativarEdicaoEmpenho(empId) {
+  const e = empenhosAtivos.find(x => x.id === empId);
+  if (e) e.editando = true;
+  renderizarExecucaoFinanceira();
+}
+
+function salvarEdicaoEmpenho(empId) {
+  const e = empenhosAtivos.find(x => x.id === empId);
+  if (e) {
+    const elProj = document.getElementById(`e_proj_${empId}`);
+    const elArea = document.getElementById(`e_area_${empId}`);
+    const elNum = document.getElementById(`e_num_${empId}`);
+    const elNad = document.getElementById(`e_nad_${empId}`);
+    const elVal = document.getElementById(`e_val_${empId}`);
+
+    if(elProj) e.projeto = elProj.value;
+    if(elArea) e.area = elArea.value;
+    if(elNum) e.numeroEmpenho = elNum.value;
+    if(elNad) e.nad = elNad.value;
+    if(elVal) e.valorEmpenhado = parseCurrency(elVal.value);
+    
+    let totLiq = e.parcelas.reduce((s,p) => s + p.valorLiquidado, 0);
+    e.saldoDisponivel = e.valorEmpenhado - totLiq;
+    
+    e.editando = false;
+    mostrarToast("Empenho salvo com sucesso!");
+  }
+}
+
+function ativarEdicaoParcela(empId, parId) {
+  const e = empenhosAtivos.find(x => x.id === empId);
+  const p = e?.parcelas.find(x => x.id === parId);
+  if (p) p.editando = true;
+  renderizarExecucaoFinanceira();
+}
+
+function salvarEdicaoParcela(empId, parId) {
+  const e = empenhosAtivos.find(x => x.id === empId);
+  const p = e?.parcelas.find(x => x.id === parId);
+  if (p) {
+    const elValPar = document.getElementById(`p_valPar_${parId}`);
+    const elComp = document.getElementById(`p_comp_${parId}`);
+    const elProc = document.getElementById(`p_proc_${parId}`);
+    const elValLiq = document.getElementById(`p_valLiq_${parId}`);
+    const elSaldoNe = document.getElementById(`p_saldoNe_${parId}`);
+    const elInst = document.getElementById(`p_inst_${parId}`);
+
+    if(elValPar) p.valorParcela = parseCurrency(elValPar.value);
+    if(elComp) p.comp = elComp.value;
+    if(elProc) p.processo = elProc.value;
+    if(elValLiq) p.valorLiquidado = parseCurrency(elValLiq.value);
+    if(elSaldoNe) p.saldoNaoExecutavel = parseCurrency(elSaldoNe.value);
+    if(elInst) p.instrumento = elInst.value;
+
+    p.editando = false;
+    mostrarToast("Parcela salva com sucesso!");
+  }
+}
+
+function abrirModalNovoEmpenho() {
+  const m = document.getElementById('modalNovoEmpenho');
+  if(m) m.classList.remove('hidden');
+}
+
+function fecharModalNovoEmpenho() {
+  const m = document.getElementById('modalNovoEmpenho');
+  if(m) m.classList.add('hidden');
+}
+
+function confirmarNovoEmpenho() {
+  const proj = document.getElementById('inputEmpProjeto').value.trim() || '3920';
+  const area = document.getElementById('inputEmpArea').value.trim() || 'DETIC';
+  const num = document.getElementById('inputEmpNumero').value.trim() || '25000300';
+  const nad = document.getElementById('inputEmpNAD').value.trim() || '3.3.90.40.0000';
+  const val = parseCurrency(document.getElementById('inputEmpValor').value) || 0;
+
+  empenhosAtivos.push({
+    id: 'emp_' + Date.now(),
+    projeto: proj,
+    area: area,
+    numeroEmpenho: num,
+    nad: nad,
+    valorEmpenhado: val,
+    saldoDisponivel: val,
+    expandido: true,
+    editando: false,
+    parcelas: []
+  });
+
+  fecharModalNovoEmpenho();
+  renderizarExecucaoFinanceira();
+  mostrarToast("Novo empenho adicionado com sucesso!");
+}
+
+function adicionarParcela(empId) {
+  const emp = empenhosAtivos.find(e => e.id === empId);
+  if(!emp) return;
+
+  emp.parcelas.push({
+    id: 'par_' + Date.now(),
+    valorParcela: 100.00,
+    comp: '07/2026',
+    processo: '26/1400-' + Math.floor(100000 + Math.random() * 900000) + '-0',
+    valorLiquidado: 90.00,
+    saldoNaoExecutavel: 10.00,
+    checked: true,
+    instrumento: 'Aditivo 1',
+    editando: true
+  });
+
+  renderizarExecucaoFinanceira();
+  mostrarToast("Nova parcela adicionada!");
+}
+
+// ====================================================
+// MODAIS COMUNS E INICIALIZAÇÃO
+// ====================================================
+
+// MODAL DE OBSERVAÇÃO (REUTILIZÁVEL NAS DUAS ABAS)
+function abrirModalObservacao(pId, fId) {
+  const p = recursosAtivos.find(x => x.id === pId);
+  const f = p?.fracoes.find(x => x.id === fId);
+  if (!f) return;
+  const obsTexto = f.obs || 'Nenhuma observação registrada.';
+  const txtObs = document.getElementById('textoModalObservacao');
+  if(txtObs) txtObs.value = obsTexto;
+  
+  const modalObs = document.getElementById('modalLerObservacao');
+  if(modalObs) modalObs.classList.remove('hidden');
+}
+
+function fecharModalObservacao() {
+  const modalObs = document.getElementById('modalLerObservacao');
+  if(modalObs) modalObs.classList.add('hidden');
+}
+
+function copiarDoModalObservacao() {
+  const texto = document.getElementById('textoModalObservacao').value;
+  navigator.clipboard.writeText(texto).then(() => {
+    mostrarToast("Observação copiada com sucesso!");
+  });
+}
+
+function abrirModalMotivo(id) {
+  const item = recursosInativos.find(x => x.id === id);
+  if(!item) return;
+
+  const vData = document.getElementById('viewMotivoData');
+  const vOp = document.getElementById('viewMotivoOperador');
+  const vTxt = document.getElementById('viewMotivoTexto');
+
+  if(vData) vData.value = item.dataAcao || 'Não registrada';
+  if(vOp) vOp.value = item.operador || 'Sistema';
+  if(vTxt) vTxt.value = item.motivoAuditoria || 'Motivo não informado.';
+
+  const modalM = document.getElementById('modalVerMotivo');
+  if(modalM) modalM.classList.remove('hidden');
+}
+
+function fecharModalMotivo() {
+  const modalM = document.getElementById('modalVerMotivo');
+  if(modalM) modalM.classList.add('hidden');
+}
+
+// MODAL DE PROJETOS PARA ABA DE RECURSOS
 function abrirModalProjeto(parentId) {
   parentRecursoAtivoId = parentId;
   const parent = recursosAtivos.find(x => x.id === parentId);
@@ -846,10 +1074,9 @@ function confirmarAdicionarFracao() {
   });
 
   fecharModalProjeto();
-  renderizar();
+  renderizarValoresAtivos();
 }
 
-// MODAL NOVO RECURSO PAI
 function abrirModalNovoRecurso() {
   const mNovo = document.getElementById('modalNovoRecurso');
   if(mNovo) mNovo.classList.remove('hidden');
@@ -906,29 +1133,146 @@ function confirmarNovoRecurso() {
   });
 
   fecharModalNovoRecurso();
-  renderizar();
+  renderizarValoresAtivos();
   mostrarToast("Novo recurso criado com sucesso!");
 }
 
-function reativar(id) {
-  const idx = recursosInativos.findIndex(x => x.id === id);
-  if (idx !== -1) {
-    const item = recursosInativos.splice(idx, 1)[0];
-    item.expandido = true;
-    item.editando = true;
-    if (!item.fracoes) item.fracoes = [];
-    if (!item.projetosExpandidos) item.projetosExpandidos = {};
-    recursosAtivos.push(item);
-    renderizar();
-  }
+// REDIMENSIONAMENTO DE COLUNAS
+function initResizableColumns() {
+  const tables = document.querySelectorAll('.resizable-table');
+  tables.forEach(table => {
+    const ths = table.querySelectorAll('th');
+    ths.forEach(th => {
+      if(th.querySelector('.resizer')) return;
+      const resizer = document.createElement('div');
+      resizer.classList.add('resizer');
+      th.appendChild(resizer);
+      
+      let startX, startW;
+      
+      resizer.addEventListener('mousedown', function(e) {
+        startX = e.clientX;
+        startW = th.offsetWidth;
+        resizer.classList.add('resizing');
+        
+        const mouseMoveHandler = function(evt) {
+          const newWidth = startW + (evt.clientX - startX);
+          th.style.width = `${newWidth}px`;
+          th.style.minWidth = `${newWidth}px`;
+        };
+        
+        const mouseUpHandler = function() {
+          resizer.classList.remove('resizing');
+          document.removeEventListener('mousemove', mouseMoveHandler);
+          document.removeEventListener('mouseup', mouseUpHandler);
+        };
+        
+        document.addEventListener('mousemove', mouseMoveHandler);
+        document.addEventListener('mouseup', mouseUpHandler);
+      });
+    });
+  });
 }
 
-function toggleE(id) {
-  const v = recursosAtivos.find(x => x.id === id);
-  if (v) v.expandido = !v.expandido;
+// CONFIRMAÇÃO GLOBAL E AÇÕES DE SALVAMENTO/EXCLUSÃO/INATIVAÇÃO
+function abrirConfirmacao(tipo, pId, fId = null) {
+  acaoPendente = { tipo, pId, fId };
+  const titulo = document.getElementById('modalConfirmTitle');
+  const desc = document.getElementById('modalConfirmDesc');
+  const auditSection = document.getElementById('modalAuditSection');
+  const btnConfirmar = document.getElementById('btnConfirmarAcao');
+
+  const inputMotivo = document.getElementById('inputMotivo');
+  if(inputMotivo) inputMotivo.value = '';
+  
+  const now = new Date();
+  const inputAuditData = document.getElementById('inputAuditData');
+  if(inputAuditData) inputAuditData.value = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+
+  if (tipo.includes('excluir')) {
+    if(titulo) titulo.innerHTML = '🗑️ Confirmar Exclusão';
+    if(desc) desc.innerHTML = 'Você deseja realmente excluir esta informação? Esta ação ficará registrada.';
+    if(auditSection) auditSection.classList.remove('hidden');
+    if(btnConfirmar) { btnConfirmar.className = 'btn-modal-danger'; btnConfirmar.innerHTML = 'Excluir'; }
+  } else if (tipo === 'inativar_pai') {
+    if(titulo) titulo.innerHTML = '⚠️ Confirmar Inativação';
+    if(desc) desc.innerHTML = 'Você deseja inativar este recurso? Ele será movido para o histórico de inativos.';
+    if(auditSection) auditSection.classList.remove('hidden');
+    if(btnConfirmar) { btnConfirmar.className = 'btn-modal-danger'; btnConfirmar.innerHTML = 'Inativar'; }
+  } else if (tipo.includes('salvar')) {
+    if(titulo) titulo.innerHTML = '💾 Salvar Alterações';
+    if(desc) desc.innerHTML = 'Você deseja finalizar a edição e salvar essas alterações?';
+    if(auditSection) auditSection.classList.add('hidden');
+    if(btnConfirmar) { btnConfirmar.className = 'btn-modal-pri'; btnConfirmar.innerHTML = 'Sim, Salvar'; }
+  }
+
+  const modalConf = document.getElementById('modalConfirmacao');
+  if(modalConf) modalConf.classList.remove('hidden');
+}
+
+function fecharModalConfirmacao() {
+  const modalConf = document.getElementById('modalConfirmacao');
+  if(modalConf) modalConf.classList.add('hidden');
+  acaoPendente = null;
+}
+
+function executarAcaoConfirmada() {
+  if (!acaoPendente) return;
+  const { tipo, pId, fId } = acaoPendente;
+  const auditSection = document.getElementById('modalAuditSection');
+  const inputMotivo = document.getElementById('inputMotivo');
+
+  if (auditSection && !auditSection.classList.contains('hidden') && inputMotivo && inputMotivo.value.trim() === '') {
+    alert('Por favor, preencha o motivo para prosseguir (obrigatório para auditoria).');
+    return;
+  }
+
+  // AÇÕES DA ABA 1 (VALORES E RECURSOS)
+  if (tipo === 'excluir_pai') {
+    recursosAtivos = recursosAtivos.filter(x => x.id !== pId);
+    mostrarToast("Recurso excluído com sucesso.");
+  } else if (tipo === 'excluir_fracao') {
+    const p = recursosAtivos.find(x => x.id === pId);
+    if (p) p.fracoes = p.fracoes.filter(x => x.id !== fId);
+    mostrarToast("Fração excluída com sucesso.");
+  } else if (tipo === 'inativar_pai') {
+    const idx = recursosAtivos.findIndex(x => x.id === pId);
+    if (idx !== -1) {
+      const item = recursosAtivos.splice(idx, 1)[0];
+      item.editando = false;
+      item.motivoAuditoria = inputMotivo ? inputMotivo.value.trim() || 'Não informado' : 'Não informado';
+      const inputAuditData = document.getElementById('inputAuditData');
+      item.dataAcao = inputAuditData ? inputAuditData.value : '';
+      item.operador = 'Guilherme Alves Braga'; 
+      recursosInativos.push(item);
+      mostrarToast("Recurso inativado com sucesso.");
+    }
+  } else if (tipo === 'salvar_pai') {
+    salvarEdicaoPai(pId);
+  } else if (tipo === 'salvar_fracao') {
+    salvarEdicaoFracao(pId, fId);
+  } 
+  
+  // AÇÕES DA ABA 2 (EXECUÇÃO FINANCEIRA)
+  else if (tipo === 'excluir_empenho') {
+    empenhosAtivos = empenhosAtivos.filter(x => x.id !== pId);
+    mostrarToast("Empenho excluído com sucesso.");
+  } else if (tipo === 'excluir_parcela') {
+    const emp = empenhosAtivos.find(x => x.id === pId);
+    if (emp) emp.parcelas = emp.parcelas.filter(x => x.id !== fId);
+    mostrarToast("Parcela excluída com sucesso.");
+  } else if (tipo === 'salvar_empenho') {
+    salvarEdicaoEmpenho(pId);
+  } else if (tipo === 'salvar_parcela') {
+    salvarEdicaoParcela(pId, fId);
+  }
+
+  fecharModalConfirmacao();
   renderizar();
 }
 
+// INICIALIZAÇÃO
 window.onload = function() {
-  alternarModo('visualizar');
+  mudarAba('valores');
+  alternarModoGeral('visualizar');
 };
