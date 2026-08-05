@@ -2,7 +2,7 @@
 // VARIÁVEIS DE ESTADO GLOBAL
 // ====================================================
 let modo = 'visualizar';
-let abaAtiva = 'valores'; 
+let abaAtiva = 'valores';
 let parentRecursoAtivoId = null;
 let acaoPendente = null;
 let inativosExpandido = false;
@@ -35,6 +35,54 @@ function parseCurrency(str) {
   if(typeof str === 'number') return str;
   let num = str.replace(/[R$\s\.]/g, '').replace(',', '.');
   return parseFloat(num) || 0;
+}
+
+// RN-01 · Vigência Proporcional (Ana Paula, brainstorming 05/08/2026)
+// Proporcional = ValorAtualizado × (dias de vigência / 365)
+// PENDENTE VALIDAÇÃO ANA PAULA: assume-se que valorAtualizado é ANUAL.
+// Se for TOTAL do instrumento, trocar o divisor 365 pela duração total prevista.
+function parseDataBR(str) {
+  if(!str || typeof str !== 'string') return null;
+  const m = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if(!m) return null;
+  return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+}
+function calcularDiasEntre(inicioStr, fimStr) {
+  const ini = parseDataBR(inicioStr);
+  const fim = parseDataBR(fimStr);
+  if(!ini || !fim) return 0;
+  const MS = 1000 * 60 * 60 * 24;
+  return Math.max(0, Math.round((fim - ini) / MS) + 1);
+}
+function calcularProporcionalPorDias(valorAtualizado, inicioStr, fimStr) {
+  const dias = calcularDiasEntre(inicioStr, fimStr);
+  if(dias === 0) return valorAtualizado;
+  return valorAtualizado * (dias / 365);
+}
+function recalcularProporcionaisAtivos() {
+  if(!Array.isArray(recursosAtivos)) return;
+  recursosAtivos.forEach(item => {
+    item.valorProporcional = calcularProporcionalPorDias(item.valorAtualizado, item.inicio, item.fim);
+  });
+}
+
+// Ajuste 1.5 (Ana Paula, 05/08/2026): campo Recurso exibido como "[Número] - [Nome]".
+function formatarRecursoLabel(f) {
+  const nome = (f && f.nomeRecurso) ? f.nomeRecurso : 'RECURSO A DEFINIR';
+  return (f && f.recurso ? f.recurso : '') + ' - ' + nome;
+}
+
+// Ajuste 1.3 (Ana Paula, 05/08/2026): frações incidem sobre o Valor Proporcional.
+// As dinâmicas (syncFractionFromPct/FromVal) já usam p.valorProporcional; esta
+// função só recalcula os valores hardcoded iniciais para bater com o novo proporcional.
+function recalcularFracoesAtivas() {
+  if(!Array.isArray(recursosAtivos)) return;
+  recursosAtivos.forEach(item => {
+    if(!Array.isArray(item.fracoes)) return;
+    item.fracoes.forEach(f => {
+      f.val = (f.pct / 100) * item.valorProporcional;
+    });
+  });
 }
 
 function applyCurrencyMask(el) {
@@ -183,11 +231,11 @@ let recursosAtivos = [
     editando: false,
     projetosExpandidos: { '3920': true, '3921': false, '3922': false, '3923': false },
     fracoes: [
-      { id: 'f1', projeto: '3920', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: 'Fração referente ao serviço prestado no datacenter principal.', editando: false },
-      { id: 'f2', projeto: '3921', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: '', editando: false },
-      { id: 'f3', projeto: '3922', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
-      { id: 'f4', projeto: '3923', uo: '1490', recurso: '1169', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
-      { id: 'f5', projeto: '3923', uo: '1490', recurso: '4169', nad: '4.4.90.52.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false }
+      { id: 'f1', projeto: '3920', uo: '1490', recurso: '1169', nomeRecurso: 'RECURSO A DEFINIR', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: 'Fração referente ao serviço prestado no datacenter principal.', editando: false },
+      { id: 'f2', projeto: '3921', uo: '1490', recurso: '1169', nomeRecurso: 'RECURSO A DEFINIR', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 25, val: 500, obs: '', editando: false },
+      { id: 'f3', projeto: '3922', uo: '1490', recurso: '1169', nomeRecurso: 'RECURSO A DEFINIR', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
+      { id: 'f4', projeto: '3923', uo: '1490', recurso: '1169', nomeRecurso: 'RECURSO A DEFINIR', nad: '3.3.90.40.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false },
+      { id: 'f5', projeto: '3923', uo: '1490', recurso: '4169', nomeRecurso: 'RECURSO A DEFINIR', nad: '4.4.90.52.0000', periodo: '01/02/2024 a 01/02/2025', pct: 12.5, val: 250, obs: '', editando: false }
     ]
   },
   {
@@ -298,10 +346,11 @@ function renderizarValoresAtivos() {
     r.valorAtualizado.toString().includes(termoBusca)
   );
 
+  // Ajuste 1.2 (Ana Paula, 05/08/2026): Acumulado = Σ Valor Proporcional
   let totalAcumulado = 0;
 
   listaFiltrada.forEach(item => {
-    totalAcumulado += item.valorAtualizado;
+    totalAcumulado += item.valorProporcional;
     const card = document.createElement('div');
     card.className = 'card-recurso';
 
@@ -361,7 +410,7 @@ function renderizarValoresAtivos() {
                     return `
                       <tr>
                         <td>${lEditF ? copyGroupInput(`f_uo_${f.id}`, f.uo, '') : (f.uo + copyBtnView(f.uo))}</td>
-                        <td>${lEditF ? copyGroupInput(`f_rec_${f.id}`, f.recurso, '') : (f.recurso + copyBtnView(f.recurso))}</td>
+                        <td>${lEditF ? copyGroupInput(`f_rec_${f.id}`, f.recurso, '') : (formatarRecursoLabel(f) + copyBtnView(f.recurso))}</td>
                         <td>${lEditF ? copyGroupInput(`f_nad_${f.id}`, f.nad, 'applyNADMask(this)', 'X.X.XX.XX.XXXX') : (f.nad + copyBtnView(f.nad))}</td>
                         <td>${lEditF ? `<input type="text" id="f_per_${f.id}" value="${f.periodo}" oninput="applyPeriodMask(this)" class="input-plain">` : f.periodo}</td>
                         <td>${lEditF ? `<div style="display:flex; align-items:center; gap:4px;"><input type="text" id="f_pct_${f.id}" value="${pctStr}" oninput="syncFractionFromPct('${item.id}', '${f.id}', '${pCode}', this)" class="input-plain" style="width:50px;">%</div>` : `<strong>${pctStr}%</strong>`}</td>
@@ -1273,6 +1322,8 @@ function executarAcaoConfirmada() {
 
 // INICIALIZAÇÃO
 window.onload = function() {
+  recalcularProporcionaisAtivos();
+  recalcularFracoesAtivas();
   mudarAba('valores');
   alternarModoGeral('visualizar');
 };
