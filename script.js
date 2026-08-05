@@ -6,6 +6,9 @@ let abaAtiva = 'valores';
 let parentRecursoAtivoId = null;
 let acaoPendente = null;
 let inativosExpandido = false;
+// Ajuste 2.5 (Ana Paula, 05/08/2026): "Valor a Executar" editável (DICAF).
+// null = usa cálculo automático (Acumulado − Liquidado); número = override manual.
+let valorAExecutarManual = null;
 
 // ÍCONES SVG
 const iconTrash = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
@@ -712,19 +715,29 @@ let empenhosAtivos = [
 ];
 
 function recalcularCardsExecucao() {
-  let valAcumulado = 1000.00;
+  // Ajuste 2.1 (Ana Paula, 05/08/2026): Acumulado da aba Execução = Σ Valor Proporcional dos recursos ativos
+  let valAcumulado = Array.isArray(recursosAtivos)
+    ? recursosAtivos.reduce((s, r) => s + (r.valorProporcional || 0), 0)
+    : 0;
   let totalEmpenhado = empenhosAtivos.reduce((s, e) => s + e.valorEmpenhado, 0);
   let valAEmpenhar = valAcumulado - totalEmpenhado; if(valAEmpenhar < 0) valAEmpenhar = 0;
   
   let totalLiquidado = 0;
   let totalSaldoNaoExecutavel = 0;
+  // Ajuste 2.2 (Ana Paula, 05/08/2026): duas submétricas do Saldo Não Executável.
+  // Interpretação PENDENTE VALIDAÇÃO: Histórico = todas as parcelas com saldo>0;
+  // Reaproveitamento = parcelas confirmadas (checked) — assumidas como reaproveitáveis.
+  let saldoNaoExecHistorico = 0;
+  let saldoNaoExecReaproveita = 0;
 
   empenhosAtivos.forEach(e => {
     e.parcelas.forEach(p => {
       totalLiquidado += p.valorLiquidado;
       if(p.checked) {
         totalSaldoNaoExecutavel += p.saldoNaoExecutavel;
+        saldoNaoExecReaproveita += p.saldoNaoExecutavel;
       }
+      saldoNaoExecHistorico += (p.saldoNaoExecutavel || 0);
     });
   });
 
@@ -742,10 +755,39 @@ function recalcularCardsExecucao() {
   if(c1) c1.textContent = formatarMoedaBR(valAcumulado);
   if(c2) c2.textContent = formatarMoedaBR(totalEmpenhado);
   if(c3) c3.textContent = formatarMoedaBR(valAEmpenhar);
-  if(c4) c4.textContent = formatarMoedaBR(valAExecutar);
+  // Ajuste 2.5: card "Valor a Executar" respeita override manual (DICAF) e vira input no modo Editar
+  const valAExecutarExibido = (valorAExecutarManual !== null) ? valorAExecutarManual : valAExecutar;
+  if(c4) {
+    if(modo === 'editar') {
+      c4.innerHTML = `<input type="text" value="${formatarMoedaBR(valAExecutarExibido)}" oninput="applyCurrencyMask(this); setValorAExecutar(this)" class="input-plain" style="width:100%; font-size:15px; color:#005F73; font-weight:bold;">`
+        + (valorAExecutarManual !== null
+            ? ` <button type="button" onclick="resetValorAExecutar()" title="Voltar ao automático" style="margin-left:4px; padding:2px 6px; font-size:11px; background:#f1f5f9; border:1px solid #cbd5e1; border-radius:3px; cursor:pointer;">↺ auto</button>`
+            : '');
+    } else {
+      c4.innerHTML = formatarMoedaBR(valAExecutarExibido)
+        + (valorAExecutarManual !== null
+            ? ` <span title="Valor sobrescrito manualmente" style="margin-left:4px; padding:1px 5px; font-size:9px; background:#fef3c7; color:#92400e; border-radius:3px; font-weight:bold; vertical-align:middle;">MANUAL</span>`
+            : '');
+    }
+  }
   if(c5) c5.textContent = formatarMoedaBR(totalSaldoNaoExecutavel);
   if(c6) c6.textContent = formatarMoedaBR(saldoAcrescimo);
   if(c7) c7.textContent = formatarMoedaBR(totalLiquidado);
+  const cH = document.getElementById('cardSaldoNaoExecHistorico');
+  const cR = document.getElementById('cardSaldoNaoExecReaproveita');
+  if(cH) cH.textContent = formatarMoedaBR(saldoNaoExecHistorico);
+  if(cR) cR.textContent = formatarMoedaBR(saldoNaoExecReaproveita);
+}
+
+// Handlers do ajuste 2.5 (Valor a Executar editável — DICAF)
+function setValorAExecutar(input) {
+  const v = parseCurrency(input.value);
+  valorAExecutarManual = isFinite(v) ? v : null;
+}
+function resetValorAExecutar() {
+  valorAExecutarManual = null;
+  recalcularCardsExecucao();
+  mostrarToast('Valor a Executar voltou ao cálculo automático.');
 }
 
 function toggleParcelaCheck(empId, parcelaId) {

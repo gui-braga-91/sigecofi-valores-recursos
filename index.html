@@ -124,6 +124,12 @@
          CONTEÚDO DA ABA: EXECUÇÃO FINANCEIRA
          ========================================== -->
     <div id="content-execucao" class="tab-content hidden">
+      <!-- Ajuste 2.3 (Ana Paula, 05/08/2026): filtro por CPF/Nome do fiscal (placeholder — sem back-end ainda) -->
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 12px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; font-size:12px;">
+        <span style="font-weight:bold; color:#005F73;">👤 Fiscal:</span>
+        <input type="text" id="inputFiscalFilter" placeholder="Buscar por CPF ou Nome do Fiscal..." class="search-box" style="flex:1; max-width:340px;" />
+        <span style="color:#94a3b8; font-size:11px; font-style:italic;">(vínculo por CPF/Nome cadastrado — em desenvolvimento)</span>
+      </div>
       <!-- 7 CARDS SUPERIORES -->
       <div class="cards-grid-7">
         <div class="card-stat">
@@ -139,12 +145,22 @@
           <span class="card-stat-val" id="cardValAEmpenhar">R$ 0,00</span>
         </div>
         <div class="card-stat">
-          <span class="card-stat-label">Valor a Executar</span>
+          <span class="card-stat-label">Valor a Executar <span title="Edição restrita ao perfil DICAF" style="display:inline-block; margin-left:4px; padding:1px 5px; background:#1e3a8a; color:#fff; border-radius:3px; font-size:9px; font-weight:bold; letter-spacing:0.3px; vertical-align:middle;">🔒 DICAF</span></span>
           <span class="card-stat-val" id="cardValAExecutar">R$ 0,00</span>
         </div>
         <div class="card-stat highlight-orange">
-          <span class="card-stat-label">Saldo não Executável</span>
+          <span class="card-stat-label">Saldo não Executável <span title="Edição restrita ao perfil DICAF" style="display:inline-block; margin-left:4px; padding:1px 5px; background:#1e3a8a; color:#fff; border-radius:3px; font-size:9px; font-weight:bold; letter-spacing:0.3px; vertical-align:middle;">🔒 DICAF</span></span>
           <span class="card-stat-val" id="cardSaldoNaoExecutavel">R$ 0,00</span>
+          <div style="margin-top:6px; padding-top:6px; border-top:1px dashed rgba(217,119,6,0.4); font-size:11px; line-height:1.5; color:#57534e;">
+            <div style="display:flex; justify-content:space-between; gap:8px;">
+              <span>Acumulado Histórico:</span>
+              <strong id="cardSaldoNaoExecHistorico" style="color:#57534e;">R$ 0,00</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; gap:8px;">
+              <span>Disponível p/ Reaproveitamento:</span>
+              <strong id="cardSaldoNaoExecReaproveita" style="color:#15803d;">R$ 0,00</strong>
+            </div>
+          </div>
         </div>
         <div class="card-stat">
           <span class="card-stat-label">Saldo p/ Acréscimo (25%)</span>
@@ -366,6 +382,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=9"></script>
 </body>
 </html>
