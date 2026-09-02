@@ -8,6 +8,20 @@ let acaoPendente = null;
 let inativosExpandido = false;
 // Ajuste B1 (Guilherme, 06/08/2026): tratamento visual das frações — A tabela | B barras | C lista plana
 let tratamentoAtivo = 'A';
+// Passo 15 (Sabrina + Ana Paula, 02/09/2026): log central de acoes destrutivas (exclusao/inativacao).
+// Cada entrada guarda tipo, alvo, motivo obrigatorio, operador e carimbo imutavel de data/hora.
+let logAcoes = [];
+function registrarLogAcao(tipo, alvo, motivo) {
+  const now = new Date();
+  logAcoes.push({
+    id: 'log_' + now.getTime(),
+    tipo: tipo,
+    alvo: alvo,
+    motivo: motivo || 'Nao informado',
+    operador: 'Guilherme Alves Braga',
+    quando: now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})
+  });
+}
 // Ajuste A2 (Guilherme, 06/08/2026): cards editáveis SEMPRE (não só no Modo Editar).
 // null = usa cálculo automático; número = override manual (perfil DICAF).
 let valorAExecutarManual = null;
@@ -46,7 +60,15 @@ function parseCurrency(str) {
 
 // Ajuste (Guilherme, 06/08/2026): portado do standalone — dropdowns de Periodicidade e Instrumento.
 // Opções padronizadas para bater com o cadastro do SIGECOFI/DICAF.
-const OPCOES_PERIODICIDADE = ['Mensal', 'Trimestral', 'Semestral', 'Anual', 'Unitário', 'Escopo', 'SEM CUSTOS', 'Não informado'];
+// Passo 15 (Sabrina + Ana Paula, 02/09/2026): "Horas" agora e periodicidade valida.
+// Quando o instrumento e "Horas", o sistema exibe colunas Qtd Horas / Valor da Hora / Horas Totais
+// e passa a calcular o Valor Proporcional pela soma dos valores fracionados (Horas x Valor/hora).
+const OPCOES_PERIODICIDADE = ['Mensal', 'Trimestral', 'Semestral', 'Anual', 'Horas', 'Unitário', 'Escopo', 'SEM CUSTOS', 'Não informado'];
+function ehInstrumentoPorHoras(item) {
+  if(!item) return false;
+  if(item.modalidade === 'horas') return true;
+  return String(item.periodicidade || '').trim().toLowerCase() === 'horas';
+}
 const OPCOES_INSTRUMENTO = ['Apostila', 'Aditivo (Alteração Quantitativo)', 'Aditivo (Alteração Valor)', 'Aditivo (Alterações Diversas)', 'Aditivo (Prorrogação)', 'Aditivo (Repactuação)', 'Aditivo', 'Contrato Original'];
 function _escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 function getOptionsPeriodicidade(atual) {
@@ -126,14 +148,28 @@ function _ordenaInstrumento(a, b) {
 function recalcularProporcionaisAtivos() {
   if(!Array.isArray(recursosAtivos)) return;
   recursosAtivos.forEach(item => {
-    if(item.modalidade === 'horas' && item.horasContratadas && item.valorHora) {
-      item.valorProporcional = calcularProporcionalPorHoras(item.horasContratadas, item.valorHora);
+    // Passo 15 (Sabrina + Ana Paula, 02/09/2026): quando periodicidade = "Horas",
+    // o Valor Proporcional passa a ser a SOMA dos valores fracionados (Qtd x Valor/hora).
+    if(ehInstrumentoPorHoras(item)) {
+      const somaFracs = (item.fracoes || []).reduce((s, f) => {
+        const v = (Number(f.qtdHoras)||0) * (Number(f.valorHora)||0);
+        return s + (v > 0 ? v : (Number(f.val)||0));
+      }, 0);
+      if(somaFracs > 0) {
+        item.valorProporcional = somaFracs;
+      } else if(item.horasContratadas && item.valorHora) {
+        item.valorProporcional = calcularProporcionalPorHoras(item.horasContratadas, item.valorHora);
+      }
     } else {
       item.valorProporcional = calcularProporcionalPorMeses(
         item.valorAtualizado, item.inicio, item.fim, item.mesesPrevistos
       );
     }
   });
+  // Valor Acumulado do Contrato = soma dos Valores Proporcionais ativos
+  const tot = recursosAtivos.reduce((s, r) => s + (Number(r.valorProporcional) || 0), 0);
+  const elTot = document.getElementById('txtTotalAcumulado');
+  if(elTot) elTot.textContent = formatarMoedaBR(tot);
 }
 
 // Passo 14 (Guilherme, 02/09/2026): catálogo institucional de Recursos (fontes contábeis)
@@ -359,9 +395,11 @@ function copyGroupInput(id, val, oninputFunc, placeholder = "") {
 // ====================================================
 // Ajuste B1: alterna entre os 3 tratamentos visuais da aba Valores e Recursos
 function setTratamento(t) {
-  if(t !== 'A' && t !== 'B' && t !== 'C') return;
+  // Passo 15 (Sabrina + Ana Paula, 02/09/2026): opção B removida; se solicitada, cai para A
+  if(t === 'B') t = 'A';
+  if(t !== 'A' && t !== 'C') return;
   tratamentoAtivo = t;
-  ['A','B','C'].forEach(x => {
+  ['A','C'].forEach(x => {
     const btn = document.getElementById('btnTrat' + x);
     if(btn) btn.classList.toggle('tratamento-ativo', x === t);
   });
@@ -439,6 +477,11 @@ function alternarModoGeral(modoAtual) {
   if(hEdit) hEdit.classList.toggle('hidden', !isEdit);
   if(bNovo) bNovo.classList.toggle('hidden', !isEdit);
   if(bEmp) bEmp.classList.toggle('hidden', !isEdit);
+
+  // Passo 15 (Sabrina + Ana Paula, 02/09/2026): switch de tratamento so em Modo Visualizar
+  document.querySelectorAll('.tratamento-switch.modo-visualizar').forEach(el => el.classList.toggle('hidden', isEdit));
+  // Ao entrar em Modo Editar, força tratamento A (Tabela) para não trazer o modo C dentro do editor
+  if(isEdit && typeof setTratamento === 'function' && tratamentoAtivo !== 'A') setTratamento('A');
 
   if (!isEdit) {
     recursosAtivos.forEach(r => {
@@ -717,6 +760,9 @@ function renderizarValoresAtivos() {
   if(!container) return;
   container.innerHTML = '';
 
+  // Passo 15: reconsolida Valor Proporcional + Valor Acumulado antes de pintar a tela
+  recalcularProporcionaisAtivos();
+
   // Ajuste B1 (Guilherme, 06/08/2026): renderiza tratamentos B (barras) e C (lista plana)
   if(tratamentoAtivo === 'B' || tratamentoAtivo === 'C') {
     let tot = 0;
@@ -774,13 +820,16 @@ function renderizarValoresAtivos() {
     if (item.expandido) {
       let htmlGrupos = '';
 
+      // Passo 15 (Sabrina + Ana Paula, 02/09/2026): variavel unica para a exibicao condicional das colunas de horas
+      const _porHoras = ehInstrumentoPorHoras(item);
+
       Object.entries(projs).forEach(([pCode, lista]) => {
         const sumVal = lista.reduce((s, x) => s + x.val, 0);
         const sumPct = lista.reduce((s, x) => s + x.pct, 0);
         const sumPctFmt = parseFloat(sumPct.toFixed(2));
         // Passo 14: subtotal de horas por projeto (aparece só se houver hora preenchida)
         const sumHoras = lista.reduce((s, x) => s + (Number(x.qtdHoras) || 0), 0);
-        const sumHorasFmt = sumHoras > 0 ? sumHoras.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' h' : '';
+        const sumHorasFmt = (_porHoras && sumHoras > 0) ? sumHoras.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' h' : '';
 
         if (!(pCode in item.projetosExpandidos)) item.projetosExpandidos[pCode] = true;
         const isProjExpanded = item.projetosExpandidos[pCode];
@@ -809,8 +858,8 @@ function renderizarValoresAtivos() {
                     <th style="width:8%;">Recurso</th>
                     <th style="width:12%;">NAD</th>
                     <th style="width:18%;">Período</th>
-                    <th style="width:8%;">Qtd. Horas</th>
-                    <th style="width:10%;">Valor da Hora</th>
+                    ${_porHoras ? '<th style="width:8%;">Qtd. Horas</th>' : ''}
+                    ${_porHoras ? '<th style="width:10%;">Valor da Hora</th>' : ''}
                     <th style="width:6%;">%</th>
                     <th style="width:12%;">Valor Fracionado</th>
                     <th style="width:11%;">OBSERVAÇÃO</th>
@@ -837,8 +886,8 @@ function renderizarValoresAtivos() {
                         <td>${lEditF ? `<select id="f_rec_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','recurso',this.value)" class="input-plain">${Object.entries(RECURSOS_CATALOG).map(([c,n])=>`<option value="${c}" ${String(f.recurso).trim()===c?'selected':''}>${c} - ${n}</option>`).join('')}</select>` : (formatarRecursoLabel(f) + copyBtnView(f.recurso))}</td>
                         <td>${lEditF ? copyGroupInput(`f_nad_${f.id}`, f.nad, 'applyNADMask(this)', 'X.X.XX.XX.XXXX') : (f.nad + copyBtnView(f.nad))}</td>
                         <td>${lEditF ? `<input type="text" id="f_per_${f.id}" value="${f.periodo}" oninput="applyPeriodMask(this)" class="input-plain">` : f.periodo}</td>
-                        <td>${lEditF ? `<input type="text" id="f_qtdh_${f.id}" value="${f.qtdHoras || ''}" oninput="syncFractionFromHoras('${item.id}','${f.id}','${pCode}',this)" class="input-plain" style="text-align:right;" placeholder="0">` : (f.qtdHoras ? qtdHorasStr + ' h' : '—')}</td>
-                        <td>${lEditF ? `<input type="text" id="f_valh_${f.id}" value="${f.valorHora ? formatarMoedaBR(f.valorHora) : ''}" oninput="applyCurrencyMask(this); syncFractionFromValorHora('${item.id}','${f.id}','${pCode}',this)" class="input-plain" placeholder="R$ 0,00">` : (f.valorHora ? formatarMoedaBR(f.valorHora) : '—')}</td>
+                        ${_porHoras ? `<td>${lEditF ? `<input type="text" id="f_qtdh_${f.id}" value="${f.qtdHoras || ''}" oninput="syncFractionFromHoras('${item.id}','${f.id}','${pCode}',this)" class="input-plain" style="text-align:right;" placeholder="0">` : (f.qtdHoras ? qtdHorasStr + ' h' : '—')}</td>` : ''}
+                        ${_porHoras ? `<td>${lEditF ? `<input type="text" id="f_valh_${f.id}" value="${f.valorHora ? formatarMoedaBR(f.valorHora) : ''}" oninput="applyCurrencyMask(this); syncFractionFromValorHora('${item.id}','${f.id}','${pCode}',this)" class="input-plain" placeholder="R$ 0,00">` : (f.valorHora ? formatarMoedaBR(f.valorHora) : '—')}</td>` : ''}
                         <td>${lEditF ? `<div style="display:flex; align-items:center; gap:4px;"><input type="text" id="f_pct_${f.id}" value="${pctStr}" oninput="syncFractionFromPct('${item.id}', '${f.id}', '${pCode}', this)" class="input-plain" style="width:50px;">%</div>` : `<strong>${pctStr}%</strong>`}</td>
                         <td>${lEditF ? `<input type="text" id="f_val_${f.id}" value="${formatarMoedaBR(f.val)}" oninput="applyCurrencyMask(this); syncFractionFromVal('${item.id}', '${f.id}', '${pCode}', this)" class="input-plain">` : `<strong>${formatarMoedaBR(f.val)}</strong>`}</td>
                         
@@ -897,7 +946,9 @@ function renderizarValoresAtivos() {
     }
 
     // Passo 14 (Guilherme, 01/09/2026 — reunião Ana Paula): Horas Totais = soma das horas das frações filhas
+    // Passo 15 (Sabrina + Ana Paula, 02/09/2026): coluna Horas Totais só aparece quando o instrumento é "Horas"
     const horasTotais = (item.fracoes || []).reduce((s, f) => s + (Number(f.qtdHoras) || 0), 0);
+    const porHoras = ehInstrumentoPorHoras(item);
     card.innerHTML = `
       <div class="table-responsive">
         <table class="resizable-table">
@@ -907,7 +958,7 @@ function renderizarValoresAtivos() {
               <th style="width:10%;">Periodicidade ↕</th>
               <th style="width:9%;">Início ↕</th>
               <th style="width:9%;">Fim ↕</th>
-              <th style="width:10%;">Horas Totais ↕</th>
+              ${porHoras ? '<th style="width:10%;">Horas Totais ↕</th>' : ''}
               <th style="width:13%;">Valor Proporcional (R$) ↕</th>
               <th style="width:13%;">Instrumento ↕</th>
               <th style="width:9%;">Número ↕</th>
@@ -923,7 +974,7 @@ function renderizarValoresAtivos() {
               <td>${lEditP ? `<input type="text" id="p_ini_${item.id}" value="${item.inicio}" oninput="applyDateMask(this)" class="input-plain">` : item.inicio}</td>
               <td>${lEditP ? `<input type="text" id="p_fim_${item.id}" value="${item.fim}" oninput="applyDateMask(this)" class="input-plain">` : item.fim}</td>
 
-              <td><strong id="p_horas_${item.id}" style="color:#005F73;">${horasTotais > 0 ? horasTotais.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' h' : '—'}</strong></td>
+              ${porHoras ? `<td><strong id="p_horas_${item.id}" style="color:#005F73;">${horasTotais > 0 ? horasTotais.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' h' : '—'}</strong></td>` : ''}
 
               <td><strong style="color:#005F73;">${formatarMoedaBR(item.valorProporcional)}</strong></td>
 
@@ -1891,24 +1942,35 @@ function executarAcaoConfirmada() {
   }
 
   // AÇÕES DA ABA 1 (VALORES E RECURSOS)
+  // Passo 15 (Sabrina + Ana Paula, 02/09/2026):
+  //  - Excluir = remocao definitiva (nao vai para historico) + log obrigatorio com motivo.
+  //  - Inativar = arquiva na tabela de Inativos (reversivel via Reativar) + carimbo imutavel.
+  const motivoTxt = inputMotivo ? inputMotivo.value.trim() : '';
   if (tipo === 'excluir_pai') {
+    const alvo = recursosAtivos.find(x => x.id === pId);
+    const desc = alvo ? `${alvo.instrumento || ''} nº ${alvo.numero || ''} · ${formatarMoedaBR(alvo.valorAtualizado)}` : pId;
     recursosAtivos = recursosAtivos.filter(x => x.id !== pId);
-    mostrarToast("Recurso excluído com sucesso.");
+    registrarLogAcao('EXCLUSAO_INSTRUMENTO', desc, motivoTxt);
+    mostrarToast("Recurso excluído definitivamente. Ação registrada no log de auditoria.");
   } else if (tipo === 'excluir_fracao') {
     const p = recursosAtivos.find(x => x.id === pId);
+    const f = p?.fracoes.find(x => x.id === fId);
+    const desc = (p && f) ? `Fração ${f.area || '-'} / Projeto ${f.projeto || '-'} do instrumento ${p.instrumento} nº ${p.numero}` : `${pId}/${fId}`;
     if (p) p.fracoes = p.fracoes.filter(x => x.id !== fId);
-    mostrarToast("Fração excluída com sucesso.");
+    registrarLogAcao('EXCLUSAO_FRACAO', desc, motivoTxt);
+    mostrarToast("Fração excluída definitivamente. Ação registrada no log de auditoria.");
   } else if (tipo === 'inativar_pai') {
     const idx = recursosAtivos.findIndex(x => x.id === pId);
     if (idx !== -1) {
       const item = recursosAtivos.splice(idx, 1)[0];
       item.editando = false;
-      item.motivoAuditoria = inputMotivo ? inputMotivo.value.trim() || 'Não informado' : 'Não informado';
+      item.motivoAuditoria = motivoTxt || 'Não informado';
       const inputAuditData = document.getElementById('inputAuditData');
       item.dataAcao = inputAuditData ? inputAuditData.value : '';
-      item.operador = 'Guilherme Alves Braga'; 
+      item.operador = 'Guilherme Alves Braga';
       recursosInativos.push(item);
-      mostrarToast("Recurso inativado com sucesso.");
+      registrarLogAcao('INATIVACAO_INSTRUMENTO', `${item.instrumento} nº ${item.numero} · ${formatarMoedaBR(item.valorAtualizado)}`, motivoTxt);
+      mostrarToast("Recurso inativado. Disponível no histórico para eventual reativação.");
     }
   } else if (tipo === 'salvar_pai') {
     salvarEdicaoPai(pId);
@@ -2767,7 +2829,8 @@ function persistState() {
           prorrogacao: !!document.getElementById('dgProrrogacao')?.checked
         },
         contratados, evolucoes, processos, atoresGrupos, atoresDemais,
-        garantias, semGarantia, diarios
+        garantias, semGarantia, diarios,
+        logAcoes
       };
       localStorage.setItem(LS_KEY, JSON.stringify(snap));
     } catch(e) { /* silencioso */ }
@@ -2792,6 +2855,7 @@ function restoreState() {
     garantias = s.garantias || [];
     semGarantia = !!s.semGarantia;
     diarios = s.diarios || [];
+    logAcoes = Array.isArray(s.logAcoes) ? s.logAcoes : [];
   } catch(e) { /* silencioso */ }
 }
 function aplicarDadosGeraisDoStorage() {
