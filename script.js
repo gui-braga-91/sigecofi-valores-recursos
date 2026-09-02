@@ -814,7 +814,7 @@ function renderizarValoresAtivos() {
                     <th style="width:6%;">%</th>
                     <th style="width:12%;">Valor Fracionado</th>
                     <th style="width:11%;">OBSERVAÇÃO</th>
-                    ${isEditGlobal ? '<th style="text-align:center; width:12%;">Ações</th>' : ''}
+                    <th style="text-align:center; width:${isEditGlobal ? '12%' : '7%'};">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -852,17 +852,17 @@ function renderizarValoresAtivos() {
                           }
                         </td>
 
-                        ${isEditGlobal ? `
-                          <td style="text-align:center; white-space:nowrap;">
-                            <div style="display:inline-flex; gap:6px; align-items:center; justify-content:center; width: 100%;">
-                              <button onclick="abrirModalObservacao('${item.id}', '${f.id}')" class="btn-square-gray" title="Visualizar Observação Completa">${iconEye}</button>
+                        <td style="text-align:center; white-space:nowrap;">
+                          <div style="display:inline-flex; gap:6px; align-items:center; justify-content:center; width: 100%;">
+                            <button onclick="abrirModalObservacao('${item.id}', '${f.id}')" class="btn-square-gray" title="Visualizar Observação Completa">${iconEye}</button>
+                            ${isEditGlobal ? `
                               <button onclick="abrirConfirmacao('excluir_fracao', '${item.id}', '${f.id}')" class="btn-square-orange" title="Excluir Fração">${iconTrash}</button>
                               ${f.editando
                                 ? `<button onclick="abrirConfirmacao('salvar_fracao', '${item.id}', '${f.id}')" class="btn-square-green" title="Confirmar Salvar">${iconCheck}</button>`
                                 : `<button onclick="ativarEdicaoFracao('${item.id}', '${f.id}')" class="btn-square-teal" title="Editar Fração">${iconPencil}</button>`}
-                            </div>
-                          </td>
-                        ` : ''}
+                            ` : ''}
+                          </div>
+                        </td>
                       </tr>
                     `;
                   }).join('')}
