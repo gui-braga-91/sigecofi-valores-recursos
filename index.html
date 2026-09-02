@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SIGECOFI - Módulo Contratos</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=18" />
 </head>
 <body>
 
@@ -35,63 +35,377 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
         </a>
       </div>
-      <div style="flex:1; display:flex; justify-content:flex-end;">
-        <button id="simVis" onclick="alternarModoGeral('visualizar')" class="btn-sim btn-sim-active">👁️ Modo Visualizar</button>
-        <button id="simEdit" onclick="alternarModoGeral('editar')" class="btn-sim btn-sim-off">✏️ Modo Editar</button>
-      </div>
+      <!-- Passo 3 (Guilherme, 20/08/2026): botões de modo movidos para o rodapé global (footer-app) -->
     </div>
 
-    <!-- CABEÇALHO DO CONTRATO -->
-    <div class="top-header">
-      <div style="flex: 1;">
-        <div id="headerVis" class="modo-vis">
-          <p style="font-size: 12px; margin-bottom: 4px;">Nº do contrato: <strong>26/06/022</strong></p>
-          <p style="font-size: 12px; margin-bottom: 4px;">Apelido: <strong>SUPERINTEROP SUPORTE EM INFORMÁTICA LTDA</strong></p>
-          <p style="font-size: 12px;">Áreas atendidas: <span class="badge-tag">DETIC</span> <span class="badge-tag">TESOURO</span></p>
+    <!-- CABEÇALHO DO CONTRATO (refinado, similar ao SIGECOFI real) -->
+    <div class="top-header top-header-v2">
+      <!-- Coluna esquerda: dados do contrato -->
+      <div class="th-left">
+        <div class="th-row">
+          <label class="th-label">Nº do contrato:</label>
+          <input type="text" id="hdrNumero" value="26/06/022" class="input-text th-input" />
         </div>
-        <div id="headerEdit" class="modo-edit hidden">
-          <div class="field-row">
-            <span class="field-label">Nº do contrato:</span>
-            <input type="text" value="26/06/022" class="input-text" style="max-width: 200px;" />
+        <div class="th-row">
+          <label class="th-label">Apelido:</label>
+          <input type="text" id="hdrApelido" value="SUPERINTEROP SUPORTE EM INFORMÁTICA LTDA" class="input-text th-input" />
+        </div>
+        <div class="th-row">
+          <label class="th-label">Áreas atendidas:</label>
+          <div id="hdrAreasChips" class="th-chips">
+            <span class="badge-tag">DETIC <span class="badge-close" onclick="removerArea('DETIC')">×</span></span>
+            <span class="badge-tag">TESOURO <span class="badge-close" onclick="removerArea('TESOURO')">×</span></span>
           </div>
-          <div class="field-row">
-            <span class="field-label">Apelido:</span>
-            <input type="text" value="SUPERINTEROP SUPORTE EM INFORMÁTICA LTDA" class="input-text" style="max-width: 450px;" />
+          <div class="autocomplete-wrap">
+            <input type="text" id="hdrInputArea" autocomplete="off" placeholder="Pesquisar área" class="input-text th-input-small"
+              oninput="renderSugestoes('area', this.value)" onfocus="renderSugestoes('area', this.value)" onblur="setTimeout(esconderSugestoes,150)"
+              onkeydown="if(event.key==='Enter'){adicionarArea(); return false;}" />
+            <div id="sugArea" class="autocomplete-list hidden"></div>
           </div>
-          <div class="field-row">
-            <span class="field-label">Áreas atendidas:</span>
-            <span class="badge-tag">DETIC <span class="badge-close">×</span></span>
-            <span class="badge-tag">TESOURO <span class="badge-close">×</span></span>
-            <button style="border: 1px solid #cbd5e1; background: #fff; padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;">Pesquisar área</button>
+          <button type="button" onclick="adicionarArea()" class="btn-modal-pri th-btn-salvar">Salvar</button>
+        </div>
+        <div class="th-row">
+          <label class="th-label">Tags do Contrato:</label>
+          <div id="hdrTagsChips" class="th-chips"></div>
+          <div class="autocomplete-wrap">
+            <input type="text" id="hdrInputTag" autocomplete="off" placeholder="Digite uma tag" class="input-text th-input-small"
+              oninput="renderSugestoes('tag', this.value)" onfocus="renderSugestoes('tag', this.value)" onblur="setTimeout(esconderSugestoes,150)"
+              onkeydown="if(event.key==='Enter'){adicionarTagHeader(); return false;}" />
+            <div id="sugTag" class="autocomplete-list hidden"></div>
           </div>
+          <button type="button" onclick="adicionarTagHeader()" class="btn-modal-pri th-btn-salvar">Salvar</button>
         </div>
       </div>
-      <div style="text-align: right;">
-        <div style="margin-bottom: 8px; font-size: 11px; color: #475569; line-height: 1.5;">
-          <p>Início: <strong>09/09/2024</strong> | Fim: <strong>09/09/2025</strong></p>
-          <p>Prorrogado até: <strong>09/09/2026</strong> | Limite: <strong>09/09/2034</strong></p>
+      <!-- Coluna direita: badge ENCERRADO + botão Visualizar/Editar + datas -->
+      <div class="th-right">
+        <div class="th-actions-top">
+          <span id="badgeEncerradoHdr" class="badge-encerrado-hdr hidden">ENCERRADO</span>
+          <button id="btnTopAction" onclick="cliqueBotaoTopo()" class="btn-sigecofi-toggle btn-sigecofi-edit-outline" title="Alternar entre Modo Visualizar e Modo Editar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg><span>Editar</span></button>
         </div>
-        <button id="btnTopAction" onclick="cliqueBotaoTopo()" class="btn-sigecofi-edit">
-          ✏️ Editar
-        </button>
+        <div class="th-datas">
+          <div class="th-data-row"><span class="th-data-label">Início:</span><span class="th-data-wrap"><input type="text" id="hdrInicio" value="09/09/2024" class="input-text th-data-input" oninput="applyDateMask(this)" /><input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'hdrInicio')" /><span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span></span></div>
+          <div class="th-data-row"><span class="th-data-label">Fim:</span><span class="th-data-wrap"><input type="text" id="hdrFim" value="09/09/2025" class="input-text th-data-input" oninput="applyDateMask(this)" /><input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'hdrFim')" /><span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span></span></div>
+          <div class="th-data-row"><span class="th-data-label">Prorr.:</span><span class="th-data-wrap"><input type="text" id="hdrProrr" value="09/09/2026" class="input-text th-data-input" oninput="applyDateMask(this)" /><input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'hdrProrr')" /><span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span></span></div>
+          <div class="th-data-row"><span class="th-data-label">Limite :</span><span class="th-data-wrap"><input type="text" id="hdrLimite" value="09/09/2034" class="input-text th-data-input" oninput="applyDateMask(this)" /><input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'hdrLimite')" /><span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span></span></div>
+        </div>
       </div>
     </div>
 
     <!-- ABAS PRINCIPAIS -->
     <div class="nav-tabs">
-      <div class="tab-btn">Dados Gerais</div>
-      <div class="tab-btn">Contratados</div>
-      <div class="tab-btn tab-active" id="tab-valores" onclick="mudarAba('valores')">Valores e recursos</div>
-      <div class="tab-btn">Diário</div>
-      <div class="tab-btn" id="tab-execucao" onclick="mudarAba('execucao')">Execução Financeira / Liquidações</div>
+      <div class="tab-btn tab-active" id="tab-dados"     onclick="mudarAba('dados')">Dados Gerais</div>
+      <div class="tab-btn"            id="tab-contratados" onclick="mudarAba('contratados')">Contratados</div>
+      <div class="tab-btn"            id="tab-evolucao"  onclick="mudarAba('evolucao_contratual')">Evolução Contratual</div>
+      <div class="tab-btn"            id="tab-processos" onclick="mudarAba('processos')">Processos Vinculados</div>
+      <div class="tab-btn"            id="tab-atores"    onclick="mudarAba('atores')">Atores</div>
+      <div class="tab-btn"            id="tab-garantias" onclick="mudarAba('garantias')">Garantias</div>
+      <div class="tab-btn"            id="tab-valores"   onclick="mudarAba('valores')">Valores e recursos</div>
+      <div class="tab-btn"            id="tab-diario"    onclick="mudarAba('diario')">Diário</div>
+      <div class="tab-btn"            id="tab-execucao"  onclick="mudarAba('execucao')">Execução Financeira / Liquidações</div>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA: DADOS GERAIS (fidelidade visual SIGECOFI real)
+         ========================================== -->
+    <div id="content-dados" class="tab-content hidden">
+      <div class="dg-panel">
+        <div class="dg-cols">
+          <!-- COLUNA ESQUERDA -->
+          <div class="dg-col">
+            <div class="form-group">
+              <label>Número do Processo de Contratação <span class="dg-info" title="Número do processo administrativo de contratação (SEI/PROA/SPI)">?</span></label>
+              <div class="input-with-actions">
+                <input type="text" id="dgProcesso" class="input-text input-blue" />
+                <button type="button" class="input-action-btn" onclick="buscarProcesso()" title="Buscar processo">🔍</button>
+                <button type="button" class="input-action-btn" onclick="copiarCampo('dgProcesso')" title="Copiar">📋</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Número do FPE <span class="dg-info" title="Número no sistema Financeiro Público Estadual">?</span></label>
+              <div class="input-with-actions">
+                <input type="text" id="dgFPE" placeholder="Não informado" class="input-text input-blue" />
+                <button type="button" class="input-action-btn" onclick="copiarCampo('dgFPE')" title="Copiar">📋</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Número do contrato externo <span class="dg-info" title="Se houver, número do contrato registrado externamente ao sistema">?</span></label>
+              <div class="input-with-actions">
+                <input type="text" id="dgExterno" placeholder="Digite o número do contrato externo" class="input-text input-blue" />
+                <button type="button" class="input-action-btn" onclick="copiarCampo('dgExterno')" title="Copiar">📋</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Modo de contratação</label>
+              <select id="dgModo" class="input-text input-blue">
+                <option value="">Selecione...</option>
+                <option>Dispensa</option><option>Inexigibilidade</option><option>Pregão Eletrônico</option>
+                <option>Concorrência</option><option>Profisco I</option><option>Profisco II</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Tipo do contrato</label>
+              <select id="dgTipo" class="input-text input-blue">
+                <option value="">Selecione...</option>
+                <option>Serviços Diversos</option><option>Consultoria</option><option>Locação</option>
+                <option>Aquisição</option><option>Convênio</option><option>Cessão de Uso</option>
+                <option>Fornecimento</option><option>Serviços de TI</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>
+                Objeto <span class="dg-info" title="Descrição completa do objeto contratado (o que será entregue)">?</span>
+                <span class="label-actions">
+                  <button type="button" class="btn-copy-view" onclick="copiarCampo('dgObjeto')" title="Copiar Objeto"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                </span>
+              </label>
+              <textarea id="dgObjeto" rows="4" class="input-text input-blue" placeholder="Descreva o objeto do contrato" title="Passe o mouse para leitura rápida ou clique nos botões de ação"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Valor da contratação <span class="dg-info" title="Valor total da contratação">?</span></label>
+              <input type="text" id="dgValor" placeholder="R$ 0,00" oninput="applyCurrencyMask(this)" class="input-text input-blue" />
+            </div>
+            <div class="form-group">
+              <label>Índice de reajuste</label>
+              <select id="dgIndice" class="input-text input-blue">
+                <option value="">Não informado</option><option>IPCA</option><option>IGP-M</option>
+                <option>INPC</option><option>IPC-Fipe</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Publicação do contrato</label>
+              <input type="text" id="dgPublicacao" placeholder="Não informado" class="input-text input-blue" />
+            </div>
+            <!-- Passo 10: campo Motivo do encerramento MOVIDO para o wrapper condicional (só aparece com Encerrado marcado) -->
+          </div>
+
+          <!-- COLUNA DIREITA -->
+          <div class="dg-col">
+            <div class="form-group dg-checks-block">
+              <label class="dg-check-item"><input type="checkbox" id="dgEncerrado" onchange="atualizarBadgeEncerrado(); toggleResponsaveis(); toggleEncerramentoCampos()"> Encerrado</label>
+              <!-- Passo 10 (Guilherme, 22/08/2026): campos condicionais que aparecem SÓ quando Encerrado marcado -->
+              <div id="dgEncerramentoWrap" class="dg-encerramento-details hidden">
+                <div class="form-group">
+                  <label class="obrigatorio">Motivo do encerramento <span class="asterisco-obrigatorio">*</span></label>
+                  <input type="text" id="dgMotivoEnc" placeholder="Digite o motivo do encerramento" class="input-text input-blue input-obrigatorio" />
+                </div>
+                <div class="form-group">
+                  <label class="obrigatorio">Data do encerramento <span class="asterisco-obrigatorio">*</span></label>
+                  <span class="date-input-wrap">
+                    <input type="text" id="dgDataEnc" placeholder="dd/mm/aaaa" oninput="applyDateMask(this)" class="input-text input-blue input-obrigatorio" />
+                    <input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'dgDataEnc')" />
+                    <span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span>
+                  </span>
+                </div>
+              </div>
+              <label class="dg-check-item"><input type="checkbox" id="dgEmergencial"> Contratação Emergencial</label>
+              <label class="dg-check-item"><input type="checkbox" id="dgProrrogacao" onchange="togglePrazoOposicao()"> Prorrogação automática</label>
+              <div id="dgPrazoWrap" class="form-group dg-prazo-inline hidden">
+                <label>Prazo para oposição:</label>
+                <input type="text" id="dgPrazoOpos" placeholder="Digite o prazo para oposição" class="input-text input-blue" />
+                <span class="dg-dia-label">dia(s)</span>
+              </div>
+            </div>
+            <!-- Bloco Status SECC -->
+            <div class="form-group dg-status-block">
+              <div class="dg-status-header">
+                <label>Status SECC</label>
+                <span class="dg-responsavel"><strong>Responsável:</strong> <span id="dgRespSECC">—</span></span>
+              </div>
+              <input type="text" id="dgStatusSECC" placeholder="Nenhum" class="input-text input-blue" />
+            </div>
+            <!-- Bloco Status SGC -->
+            <div class="form-group dg-status-block">
+              <div class="dg-status-header">
+                <label>Status SGC</label>
+                <span class="dg-responsavel"><strong>Responsável:</strong> <span id="dgRespSGC">—</span></span>
+              </div>
+              <input type="text" id="dgStatusSGC" placeholder="Nenhum" class="input-text input-blue" />
+            </div>
+            <!-- Bloco Status SEFIN -->
+            <div class="form-group dg-status-block">
+              <div class="dg-status-header">
+                <label>Status SEFIN</label>
+                <span class="dg-responsavel"><strong>Responsável:</strong> <span id="dgRespSEFIN">—</span></span>
+              </div>
+              <input type="text" id="dgStatusSEFIN" placeholder="Nenhum" class="input-text input-blue" />
+            </div>
+            <div class="form-group">
+              <label>Periodicidade do valor <span class="dg-info" title="Frequência de faturamento">?</span></label>
+              <select id="dgPeriodicidade" class="input-text input-blue"></select>
+            </div>
+            <div class="form-group">
+              <label>Data base do reajuste <span class="dg-info" title="Data de referência para reajuste">?</span></label>
+              <span class="date-input-wrap">
+                <input type="text" id="dgDataReajuste" placeholder="dd/mm/aaaa" oninput="applyDateMask(this)" class="input-text input-blue" />
+                <input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'dgDataReajuste')" />
+                <span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span>
+              </span>
+            </div>
+            <div class="form-group">
+              <label>Ordem de início dos serviços <span class="dg-info" title="Data de emissão da OS">?</span></label>
+              <span class="date-input-wrap">
+                <input type="text" id="dgOrdemInicio" placeholder="dd/mm/aaaa" oninput="applyDateMask(this)" class="input-text input-blue" />
+                <input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'dgOrdemInicio')" />
+                <span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span>
+              </span>
+            </div>
+            <!-- Passo 10: campo Data do encerramento MOVIDO para o wrapper condicional (só aparece com Encerrado marcado) -->
+          </div>
+        </div>
+        <!-- Rodapé agora é global (footer-app) -->
+      </div>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA: CONTRATADOS (refinado)
+         ========================================== -->
+    <div id="content-contratados" class="tab-content hidden">
+      <div class="action-bar">
+        <input type="text" id="inputSearchContratados" oninput="renderContratados()" placeholder="🔍 Pesquisa por nome" class="search-box" />
+        <button onclick="abrirModalContratado()" class="btn-add-recurso">+ Adicionar Contratado</button>
+      </div>
+      <div class="table-responsive">
+        <table class="resizable-table dg-tabela" style="min-width:900px;">
+          <thead><tr>
+            <th>Nome do contratado ⇅</th><th>CPF/CNPJ ⇅</th><th>Código credor ⇅</th><th>Natureza ⇅</th>
+            <th>Data Início</th><th>Data Fim</th><th style="text-align:center;">Ações</th>
+          </tr></thead>
+          <tbody id="tbodyContratados"></tbody>
+        </table>
+      </div>
+      <!-- HISTÓRICO -->
+      <div class="dg-historico-section">
+        <div class="dg-historico-title">Histórico</div>
+        <div class="table-responsive">
+          <table class="resizable-table dg-tabela" style="min-width:900px;">
+            <thead><tr>
+              <th>Nome do contratado ⇅</th><th>CPF/CNPJ ⇅</th><th>Código credor ⇅</th><th>Natureza ⇅</th>
+              <th>Data Início</th><th>Data Fim</th><th style="text-align:center;">Ações</th>
+            </tr></thead>
+            <tbody id="tbodyContratadosHist"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA: EVOLUÇÃO CONTRATUAL
+         ========================================== -->
+    <div id="content-evolucao_contratual" class="tab-content hidden">
+      <div class="action-bar">
+        <input type="text" id="inputSearchEvolucao" oninput="renderEvolucao()" placeholder="🔍 Pesquisa por instrumento" class="search-box" />
+        <button onclick="adicionarEvolucao()" class="btn-add-recurso">+ Adicionar Valores Contratuais</button>
+      </div>
+      <div class="table-responsive">
+        <table class="resizable-table" style="min-width:1200px; background:#fff; border:1px solid #c0dde5;">
+          <thead><tr style="background:#f8fafc; color:#334155;">
+            <th>Data assinatura</th><th>Tipo de instrumento</th><th>Número</th>
+            <th>Início Vigência</th><th>Fim Vigência</th><th>Objeto</th>
+            <th>Valor</th><th>Periodicidade</th><th>Publicação</th><th>Página</th>
+            <th style="text-align:center;">Ações</th>
+          </tr></thead>
+          <tbody id="tbodyEvolucao"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA: PROCESSOS VINCULADOS
+         ========================================== -->
+    <div id="content-processos" class="tab-content hidden">
+      <div class="action-bar">
+        <input type="text" id="inputSearchProcessos" oninput="renderProcessos()" placeholder="🔍 Pesquisa por Nº do processo" class="search-box" />
+        <button onclick="adicionarProcesso()" class="btn-add-recurso">+ Adicionar Processo</button>
+      </div>
+      <div class="table-responsive">
+        <table class="resizable-table" style="min-width:800px; background:#fff; border:1px solid #c0dde5;">
+          <thead><tr style="background:#f8fafc; color:#334155;">
+            <th>Número do Processo</th><th>Data de abertura</th><th>Natureza</th><th>Observação</th>
+            <th style="text-align:center;">Ações</th>
+          </tr></thead>
+          <tbody id="tbodyProcessos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA: ATORES
+         ========================================== -->
+    <div id="content-atores" class="tab-content hidden">
+      <div class="action-bar">
+        <input type="text" id="inputSearchAtores" oninput="renderAtores()" placeholder="🔍 Pesquisa por ator ou função" class="search-box" />
+        <button onclick="adicionarAtor()" class="btn-add-recurso">+ Adicionar Ator</button>
+      </div>
+      <div class="atores-grid">
+        <div class="atores-col">
+          <div class="header-section-bar" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Grupos Ordenadores Vinculados</span>
+            <button onclick="vincularGrupo()" class="btn-modal-sec" style="font-size:11px;">+ Vincular Grupo</button>
+          </div>
+          <div id="atoresGrupos" class="atores-list"></div>
+        </div>
+        <div class="atores-col">
+          <div class="header-section-bar">Demais Atores do contrato</div>
+          <div id="atoresDemais" class="atores-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA: GARANTIAS
+         ========================================== -->
+    <div id="content-garantias" class="tab-content hidden">
+      <div class="action-bar">
+        <input type="text" id="inputSearchGarantias" oninput="renderGarantias()" placeholder="🔍 Pesquisa por tipo de garantia" class="search-box" />
+        <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#475569;">
+          <input type="checkbox" id="chkSemGarantia" onchange="toggleSemGarantia()"> Contrato sem Garantia
+        </label>
+        <button onclick="adicionarGarantia()" class="btn-add-recurso">+ Adicionar Garantia</button>
+      </div>
+      <div class="table-responsive">
+        <table class="resizable-table" style="min-width:800px; background:#fff; border:1px solid #c0dde5;">
+          <thead><tr style="background:#f8fafc; color:#334155;">
+            <th>Tipo de garantia</th><th>Valor da garantia</th><th>Data de início</th>
+            <th>Data de vencimento</th><th style="text-align:center;">Ações</th>
+          </tr></thead>
+          <tbody id="tbodyGarantias"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         CONTEÚDO DA ABA: DIÁRIO (refinado — Passo 9)
+         ========================================== -->
+    <div id="content-diario" class="tab-content hidden">
+      <div class="action-bar">
+        <input type="text" id="inputSearchDiario" oninput="renderDiario()" placeholder="🔍 Pesquisa por observação" class="search-box" />
+        <button type="button" onclick="enviarEmailDiario()" class="btn-diario-email" title="Enviar e-mail de vencimento ou prorrogação — grava registro imutável no diário">📧 Enviar E-mail de Vencimento ou Prorrogação</button>
+        <button onclick="adicionarDiario()" class="btn-add-recurso">+ Adicionar Diário</button>
+      </div>
+      <div class="table-responsive">
+        <table class="resizable-table" style="min-width:900px; background:#fff; border:1px solid #c0dde5;">
+          <thead><tr style="background:#f8fafc; color:#334155;">
+            <th>Data</th><th>Área</th><th>Movimento</th><th>Meio</th><th>Responsável</th>
+            <th>Observação</th><th style="text-align:center;">Ações</th>
+          </tr></thead>
+          <tbody id="tbodyDiario"></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- ==========================================
          CONTEÚDO DA ABA: VALORES E RECURSOS
          ========================================== -->
-    <div id="content-valores" class="tab-content">
+    <div id="content-valores" class="tab-content hidden">
       <div class="action-bar">
         <input type="text" id="inputSearch" oninput="renderizar()" placeholder="🔍 Pesquisa por valor de recurso ou instrumento..." class="search-box" />
+        <!-- Ajuste B1 (Guilherme, 06/08/2026): switch de tratamento visual (portado do standalone) -->
+        <div class="tratamento-switch">
+          <span class="tratamento-label">TRATAMENTO</span>
+          <button type="button" id="btnTratA" onclick="setTratamento('A')" class="btn-tratamento tratamento-ativo">A · Tabela</button>
+          <button type="button" id="btnTratB" onclick="setTratamento('B')" class="btn-tratamento">B · Barras de cota</button>
+          <button type="button" id="btnTratC" onclick="setTratamento('C')" class="btn-tratamento">C · Lista plana</button>
+        </div>
         <button id="btnNovoRec" onclick="abrirModalNovoRecurso()" class="btn-add-recurso modo-edit hidden">
           + Adicionar Valor de Recurso
         </button>
@@ -124,12 +438,6 @@
          CONTEÚDO DA ABA: EXECUÇÃO FINANCEIRA
          ========================================== -->
     <div id="content-execucao" class="tab-content hidden">
-      <!-- Ajuste 2.3 (Ana Paula, 05/08/2026): filtro por CPF/Nome do fiscal (placeholder — sem back-end ainda) -->
-      <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 12px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; font-size:12px;">
-        <span style="font-weight:bold; color:#005F73;">👤 Fiscal:</span>
-        <input type="text" id="inputFiscalFilter" placeholder="Buscar por CPF ou Nome do Fiscal..." class="search-box" style="flex:1; max-width:340px;" />
-        <span style="color:#94a3b8; font-size:11px; font-style:italic;">(vínculo por CPF/Nome cadastrado — em desenvolvimento)</span>
-      </div>
       <!-- 7 CARDS SUPERIORES -->
       <div class="cards-grid-7">
         <div class="card-stat">
@@ -163,7 +471,7 @@
           </div>
         </div>
         <div class="card-stat">
-          <span class="card-stat-label">Saldo p/ Acréscimo (25%)</span>
+          <span class="card-stat-label">Saldo p/ Acréscimo (25%) <span title="Edição restrita ao perfil DICAF" style="display:inline-block; margin-left:4px; padding:1px 5px; background:#1e3a8a; color:#fff; border-radius:3px; font-size:9px; font-weight:bold; letter-spacing:0.3px; vertical-align:middle;">🔒 DICAF</span></span>
           <span class="card-stat-val" id="cardSaldoAcrescimo">R$ 0,00</span>
         </div>
         <div class="card-stat highlight-green">
@@ -183,6 +491,13 @@
         <div class="header-section-bar" style="margin-bottom: 12px;">Evolução Financeira e Liquidações Contratuais</div>
         <div id="containerExecucao"></div>
       </div>
+    </div>
+
+    <!-- Rodapé global (Passo 3b, Guilherme 20/08/2026): SÓ aparece em Modo Editar (Salvar + Fechar). Em Modo Visualizar fica vazio/oculto. Alternador Vis↔Edit está no botão único do cabeçalho (btnTopAction). -->
+    <div id="footer-app" class="footer-app">
+      <div style="flex:1;"></div>
+      <button type="button" id="footerBtnSalvar" onclick="salvarGlobal()" class="btn-modal-pri footer-btn-salvar">💾 Salvar</button>
+      <button type="button" id="footerBtnFechar" onclick="fecharGlobal()" class="btn-modal-danger">❌ Fechar</button>
     </div>
 
   </div>
@@ -220,13 +535,64 @@
     </div>
   </div>
 
-  <!-- MODAL: LER OBSERVAÇÃO -->
+  <!-- MODAL: ALERTA DE ENVIO SEM RESPONSÁVEL (Passo 13 Guilherme, 28/08/2026) -->
+  <div id="modalAlertaEnvio" class="modal-overlay hidden">
+    <div class="modal-card modal-alerta-card">
+      <button onclick="fecharModalAlertaEnvio()" class="modal-close-x" title="Fechar">×</button>
+      <div class="modal-alerta-icone">⚠️</div>
+      <div class="modal-alerta-titulo">Atenção: Responsável não identificado</div>
+      <div class="modal-alerta-mensagem">
+        Não foi identificado nenhum <strong>Responsável</strong> (Gestor / Responsável SECC / SGC / SEFIN) cadastrado na aba <strong>Atores</strong> para este contrato.
+        <br><br>
+        Deseja prosseguir com o encaminhamento do e-mail mesmo assim?
+      </div>
+      <div class="modal-actions">
+        <button onclick="fecharModalAlertaEnvio()" class="btn-modal-sec">← Cancelar / Voltar</button>
+        <button onclick="confirmarEnvioSemResponsavel()" class="btn-modal-danger">Estou ciente, prosseguir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: LER OBSERVAÇÃO + AUDITORIA (Passo 11 Guilherme, 22/08/2026) -->
   <div id="modalLerObservacao" class="modal-overlay hidden">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 640px;">
       <button onclick="fecharModalObservacao()" class="modal-close-x" title="Fechar">×</button>
       <div class="modal-title">📄 Observação Completa</div>
-      <div class="form-group">
-        <textarea id="textoModalObservacao" class="textarea-motivo" rows="6" readonly style="background:#f1f5f9; color:#475569;"></textarea>
+      <!-- Seção Auditoria (aparece quando temos os dados) -->
+      <div id="modalObsAuditWrap" class="audit-box hidden">
+        <div class="audit-title">Dados da auditoria</div>
+        <div style="margin-bottom:8px;">
+          <div style="font-size:11px; font-weight:bold; color:#005F73; margin-bottom:4px;">Inclusão</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group" style="margin:0;">
+              <label>Responsável</label>
+              <input type="text" id="modalObsCriadoPor" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Data</label>
+              <input type="text" id="modalObsCriadoEm" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px; font-weight:bold; color:#005F73; margin-bottom:4px;">Última alteração</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group" style="margin:0;">
+              <label>Responsável</label>
+              <input type="text" id="modalObsAlteradoPor" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label>Data</label>
+              <input type="text" id="modalObsAlteradoEm" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Caixa da Observação (SEMPRE aparece) -->
+      <div class="form-group" style="margin-top:12px;">
+        <label style="font-weight:bold; color:#005F73;">📝 Observação</label>
+        <textarea id="textoModalObservacao" class="textarea-motivo" rows="6" readonly style="background:#f1f5f9; color:#475569; user-select:text;"></textarea>
+        <div style="font-size:11px; color:#94a3b8; margin-top:4px; font-style:italic;">Somente leitura — selecione trechos com o mouse para copiar.</div>
       </div>
       <div class="modal-actions" style="justify-content: space-between;">
         <button onclick="copiarDoModalObservacao()" class="btn-modal-pri" style="background: #16a34a; display:flex; align-items:center; gap:4px;">
@@ -267,10 +633,10 @@
 
   <!-- MODAL: SELEÇÃO DE PROJETO -->
   <div id="modalSelectProjeto" class="modal-overlay hidden">
-    <div class="modal-card">
+    <div class="modal-card" style="max-width: 640px;">
       <button onclick="fecharModalProjeto()" class="modal-close-x" title="Cancelar">×</button>
       <div class="modal-title">📌 Adicionar Nova Fração</div>
-      <div class="modal-desc">Escolha a qual projeto esta nova fração pertencerá:</div>
+      <div class="modal-desc">Escolha a qual projeto esta nova fração pertencerá e preencha os dados iniciais:</div>
       <div class="form-group">
         <label for="selectProjetoExistente">Selecione o Projeto:</label>
         <select id="selectProjetoExistente" onchange="toggleNovoProjInput(this.value)" class="input-text" style="background: #fff; font-weight: bold; color: #005F73;">
@@ -279,6 +645,29 @@
       <div id="groupNovoProjCode" class="form-group hidden">
         <label for="inputNovoProjCode">Código do Novo Projeto:</label>
         <input type="text" id="inputNovoProjCode" placeholder="Ex: 3924" class="input-text" />
+      </div>
+      <!-- Passo 14 (Guilherme, 01/09/2026 — reunião Ana Paula):
+           novos campos Área / Qtd. Horas / Valor da Hora na criação de fração -->
+      <!-- Refinamento (02/09/2026): Área virou <select> pré-populado com as Áreas Atendidas do contrato -->
+      <div class="form-group">
+        <label for="inputNovaFracArea">Área:</label>
+        <select id="inputNovaFracArea" class="input-text" style="background:#fff;">
+          <option value="">Selecione a área atendida...</option>
+        </select>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label for="inputNovaFracQtdHoras">Qtd. Horas:</label>
+          <input type="number" id="inputNovaFracQtdHoras" min="0" step="0.01" placeholder="Ex: 120" class="input-text" oninput="atualizarValorFracionadoModalNovaFracao()" />
+        </div>
+        <div class="form-group">
+          <label for="inputNovaFracValorHora">Valor da Hora (R$):</label>
+          <input type="text" id="inputNovaFracValorHora" placeholder="Ex: R$ 150,00" class="input-text" oninput="applyCurrencyMask(this); atualizarValorFracionadoModalNovaFracao();" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="color:#94a3b8;">Valor Fracionado (R$):</label>
+        <input type="text" id="inputNovaFracValorFracionado" value="Calculado automaticamente" disabled class="input-text" style="background:#f1f5f9; color:#94a3b8; font-style:italic; cursor:not-allowed;" title="Qtd. Horas × Valor da Hora" />
       </div>
       <div class="modal-actions">
         <button onclick="fecharModalProjeto()" class="btn-modal-sec">Cancelar</button>
@@ -298,9 +687,12 @@
           <label>Valor Atualizado (R$):</label>
           <input type="text" id="inputNewValorAtu" oninput="applyCurrencyMask(this)" placeholder="Ex: R$ 100.000,00" class="input-text" />
         </div>
+        <!-- Passo 14 (Guilherme, 01/09/2026 — reunião Ana Paula):
+             Valor Proporcional REMOVIDO do modal — é 100% calculado pelo sistema
+             (Valor Atualizado × Periodicidade × Datas). Ver RN-01. -->
         <div class="form-group">
-          <label>Valor Proporcional (R$):</label>
-          <input type="text" id="inputNewValorProp" oninput="applyCurrencyMask(this)" placeholder="Ex: R$ 100.000,00" class="input-text" />
+          <label style="color:#94a3b8;">Valor Proporcional (R$):</label>
+          <input type="text" value="Calculado automaticamente pelo sistema" disabled class="input-text" style="background:#f1f5f9; color:#94a3b8; font-style:italic; cursor:not-allowed;" title="RN-01: calculado pelo Valor Atualizado × (Meses executados / Meses previstos)" />
         </div>
         <div class="form-group">
           <label>Periodicidade:</label>
@@ -382,6 +774,86 @@
     </div>
   </div>
 
-  <script src="script.js?v=9"></script>
+  <!-- MODAL: CONTRATADO (novo ou edição — Passo 4 Guilherme 20/08/2026) -->
+  <div id="modalContratado" class="modal-overlay hidden">
+    <div class="modal-card modal-contratado-card">
+      <button onclick="fecharModalContratado()" class="modal-close-x" title="Fechar">×</button>
+      <div class="modal-title" style="text-align:left;">Razão Social: <span id="mcRazaoTitulo">—</span></div>
+      <div class="modal-body-scroll">
+        <div class="form-group">
+          <label>Razão Social</label>
+          <input type="text" id="mcRazao" class="input-text input-blue" placeholder="Digite a razão social" />
+        </div>
+        <div class="form-group">
+          <label>Sigla</label>
+          <input type="text" id="mcSigla" class="input-text input-blue" />
+        </div>
+        <div class="dg-cols">
+          <div class="form-group"><label>CPF / CNPJ</label><input type="text" id="mcDoc" class="input-text input-blue" /></div>
+          <div class="form-group"><label>Nº Credor</label><input type="text" id="mcCredor" class="input-text input-blue" /></div>
+        </div>
+        <div class="form-group">
+          <label>Nome Fantasia</label>
+          <input type="text" id="mcFantasia" class="input-text input-blue" />
+        </div>
+        <div class="dg-status-header" style="margin-top:12px;">
+          <div style="font-weight:bold; color:#005F73; font-size:13px;">Dados do contratado</div>
+        </div>
+        <div class="dg-cols">
+          <div class="form-group"><label>CEP</label><input type="text" id="mcCep" placeholder="Digite o CEP" class="input-text input-blue" /></div>
+          <div class="form-group" style="grid-column: span 1;"><label>Logradouro</label><input type="text" id="mcLogradouro" class="input-text input-blue" /></div>
+        </div>
+        <div class="dg-cols">
+          <div class="form-group"><label>Bairro</label><input type="text" id="mcBairro" class="input-text input-blue" /></div>
+          <div class="form-group"><label>Município</label><input type="text" id="mcMunicipio" class="input-text input-blue" /></div>
+        </div>
+        <div class="dg-cols">
+          <div class="form-group"><label>Estado</label><input type="text" id="mcEstado" class="input-text input-blue" maxlength="2" /></div>
+          <div class="form-group"><label>Telefone</label><input type="text" id="mcTelefone" placeholder="Não informado" class="input-text input-blue" /></div>
+        </div>
+        <div class="form-group"><label>Email</label><input type="text" id="mcEmail" placeholder="Não informado" class="input-text input-blue" /></div>
+        <div class="form-group">
+          <label>Status</label>
+          <div style="display:flex; gap:16px; margin-top:4px;">
+            <label style="display:flex; align-items:center; gap:6px; font-size:12px;"><input type="radio" name="mcStatus" id="mcStatusAtivo" value="Ativo" checked> Ativo</label>
+            <label style="display:flex; align-items:center; gap:6px; font-size:12px;"><input type="radio" name="mcStatus" id="mcStatusInativo" value="Inativo"> Inativo</label>
+          </div>
+        </div>
+        <div class="dg-status-header" style="margin-top:12px;">
+          <div style="font-weight:bold; color:#005F73; font-size:13px;">Contatos do contratado</div>
+          <button type="button" onclick="mcAdicionarContato()" class="btn-square-teal" title="Adicionar contato" style="width:24px; height:24px; font-size:14px;">+</button>
+        </div>
+        <div id="mcListaContatos" style="margin-top:6px; display:flex; flex-direction:column; gap:4px;"></div>
+        <div class="dg-cols" style="margin-top:12px;">
+          <div class="form-group"><label>Natureza</label><input type="text" id="mcNatureza" class="input-text input-blue" placeholder="Ex.: Pessoa Jurídica" /></div>
+          <div class="form-group"><label>Código credor</label><input type="text" id="mcCodCredor" class="input-text input-blue" /></div>
+        </div>
+        <div class="dg-cols">
+          <div class="form-group">
+            <label>Data Início</label>
+            <span class="date-input-wrap">
+              <input type="text" id="mcDtIni" placeholder="dd/mm/aaaa" oninput="applyDateMask(this)" class="input-text input-blue" />
+              <input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'mcDtIni')" />
+              <span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span>
+            </span>
+          </div>
+          <div class="form-group">
+            <label>Data Fim</label>
+            <span class="date-input-wrap">
+              <input type="text" id="mcDtFim" placeholder="dd/mm/aaaa" oninput="applyDateMask(this)" class="input-text input-blue" />
+              <input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'mcDtFim')" />
+              <span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button onclick="salvarModalContratado()" class="btn-modal-pri">Salvar</button>
+        <button onclick="fecharModalContratado()" class="btn-modal-danger">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js?v=42"></script>
 </body>
 </html>

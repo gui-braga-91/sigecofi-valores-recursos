@@ -245,15 +245,60 @@ body {
   background: #e2e8f0; 
 }
 
-.tab-active { 
-  background: #ffffff; 
-  color: #005F73; 
-  font-weight: bold; 
-  border-color: #005F73; 
-  margin-bottom: -1px; 
-  position: relative; 
-  z-index: 2; 
-  border-top: 2px solid #005F73; 
+.tab-active {
+  background: #ffffff;
+  color: #005F73;
+  font-weight: bold;
+  border-color: #005F73;
+  margin-bottom: -1px;
+  position: relative;
+  z-index: 2;
+  border-top: 2px solid #005F73;
+}
+/* Ajuste A4 (Guilherme, 06/08/2026): sinaliza abas sem reatividade */
+.tab-inativa {
+  color: #94a3b8;
+  background: #f8fafc;
+  font-style: italic;
+  cursor: help;
+}
+.tab-inativa:hover {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+/* Ajuste B1 (Guilherme, 06/08/2026): switch de tratamento visual (portado do standalone) */
+.tratamento-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  padding: 3px 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+}
+.tratamento-label {
+  font-size: 10px;
+  font-weight: bold;
+  color: #64748b;
+  letter-spacing: 0.5px;
+}
+.btn-tratamento {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #64748b;
+  cursor: pointer;
+}
+.btn-tratamento:hover { background: #e2e8f0; }
+.btn-tratamento.tratamento-ativo {
+  background: #005F73;
+  color: #fff;
+  font-weight: bold;
+  border-color: #005F73;
 }
 
 /* CONTEÚDO DA ABA */
@@ -421,17 +466,20 @@ tr:hover {
   background-color: #f8fafc; 
 }
 
-.resizer { 
-  position: absolute; 
-  top: 0; 
-  right: 0; 
-  width: 4px; 
-  height: 100%; 
-  cursor: col-resize; 
-  user-select: none; 
-  background-color: rgba(255, 255, 255, 0.35); 
-  transition: background-color 0.2s, width 0.2s; 
-  z-index: 1; 
+/* Passo 10 (Card 16412 Ana Paula): garantir que resizer funcione em Modo Editar também.
+   Requer position:relative no <th>. */
+.resizable-table th { position: relative; }
+.resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  background-color: rgba(255, 255, 255, 0.35);
+  transition: background-color 0.2s, width 0.2s;
+  z-index: 5;
 }
 
 .resizer:hover, .resizer.resizing { 
@@ -778,3 +826,847 @@ tr:hover {
 
 .audit-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-top: 16px; }
 .audit-title { color: #005F73; font-weight: bold; font-size: 12px; margin-bottom: 10px; }
+
+/* ============================================================
+   Ajuste (Guilherme, 06/08/2026): responsividade — portada do standalone.
+   Breakpoints: <=900px tablet, <=600px mobile.
+   ============================================================ */
+@media (max-width: 900px) {
+  .window-modal { padding: 12px; }
+  .action-bar { flex-wrap: wrap; gap: 8px; }
+  .action-bar .search-box { min-width: 100%; }
+  .tratamento-switch { margin-left: 0; }
+  .contract-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .nav-tabs { overflow-x: auto; flex-wrap: nowrap; }
+  .tab-btn { white-space: nowrap; flex-shrink: 0; }
+  .cards-grid-7 { grid-template-columns: repeat(2, 1fr); }
+  .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .modal-card { max-width: calc(100% - 24px) !important; margin: 12px; }
+}
+/* ============================================================
+   Passo 2 (Guilherme, 19/08/2026): refinamento visual — cabeçalho + Dados Gerais
+   Fidelidade visual ao SIGECOFI real (baseado no print compartilhado).
+   ============================================================ */
+.top-header-v2 {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 24px;
+  align-items: start;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.th-left { display: flex; flex-direction: column; gap: 6px; }
+.th-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.th-label {
+  font-size: 12px;
+  color: #475569;
+  min-width: 100px;
+  text-align: right;
+}
+.th-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.th-input-small {
+  flex: 1;
+  min-width: 140px;
+  max-width: 260px;
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.th-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.th-btn-salvar { padding: 4px 12px !important; font-size: 11px !important; }
+.th-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 240px;
+}
+.th-actions-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge-encerrado-hdr {
+  padding: 3px 10px;
+  background: #f9c4d0;
+  color: #b91c1c;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.btn-sigecofi-visualizar {
+  background: #fff;
+  color: #005F73;
+  border: 1px solid #005F73;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.btn-sigecofi-visualizar:hover { background: #e0f2fe; }
+.th-datas { display: flex; flex-direction: column; gap: 4px; }
+.th-data-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.th-data-label {
+  font-size: 11px;
+  color: #005F73;
+  min-width: 55px;
+  text-align: right;
+  font-weight: bold;
+}
+.th-data-wrap {
+  position: relative;
+  display: inline-block;
+}
+.th-data-input {
+  width: 130px;
+  padding: 4px 26px 4px 8px;
+  font-size: 11px;
+  border: 1px solid #b6d4dc;
+  background: #f0f9fc;
+  border-radius: 4px;
+  color: #005F73;
+}
+.th-data-input:focus {
+  outline: none; border-color: #005F73;
+  box-shadow: 0 0 0 2px rgba(0, 95, 115, 0.15);
+}
+.th-cal-icon {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0.55;
+}
+@media (max-width: 900px) {
+  .top-header-v2 { grid-template-columns: 1fr; }
+  .th-right { align-items: stretch; }
+  .th-data-row { justify-content: flex-start; }
+}
+
+/* Passo 3 (Guilherme, 20/08/2026): Modo Visualizar refinado — mantém APARÊNCIA de forms
+   (bordas azul-claras + fundo cinza-claro), mas SEM edição. Texto seletivo. Igual SIGECOFI real. */
+body.modo-app-visualizar .dg-panel input.input-text,
+body.modo-app-visualizar .dg-panel select.input-text,
+body.modo-app-visualizar .dg-panel textarea.input-text,
+body.modo-app-visualizar .top-header-v2 input.input-text {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+  pointer-events: none;
+  cursor: default;
+  box-shadow: none !important;
+  -webkit-user-select: text;
+  user-select: text;
+}
+body.modo-app-visualizar .dg-panel textarea.input-text { resize: none; }
+
+/* Passo 10 (Guilherme, 22/08/2026 — cards Ana Paula): Cabeçalho em Modo Visualizar
+   deixa Nº/Apelido/Datas como TEXTO NEGRITO (sem caixa/borda visível), como no SIGECOFI real. */
+body.modo-app-visualizar .top-header-v2 input.th-input,
+body.modo-app-visualizar .top-header-v2 input.th-data-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  font-weight: bold !important;
+  color: #1e293b !important;
+  font-size: 13px !important;
+  height: auto;
+  min-height: 1.5em;
+}
+body.modo-app-visualizar .top-header-v2 .th-data-input {
+  color: #005F73 !important;
+  font-size: 13px !important;
+}
+body.modo-app-visualizar .top-header-v2 .th-data-label {
+  color: #005F73 !important;
+  font-weight: bold !important;
+  font-size: 12px !important;
+}
+/* Realce visual das datas em ambos os modos (Card melhoria UX Ana Paula) */
+.top-header-v2 .th-data-label { color: #005F73; font-weight: bold; }
+.top-header-v2 .th-data-input {
+  color: #005F73;
+  font-weight: 600;
+}
+/* Passo 5 (Guilherme, 20/08/2026): trava reforçada — checkboxes, radios, e QUALQUER input em Visualizar */
+body.modo-app-visualizar .dg-panel input[type="checkbox"],
+body.modo-app-visualizar .dg-panel input[type="radio"],
+body.modo-app-visualizar .top-header-v2 input[type="checkbox"] {
+  pointer-events: none !important;
+  cursor: default !important;
+  opacity: 0.75;
+}
+body.modo-app-visualizar .dg-check-item {
+  pointer-events: none;
+  cursor: default;
+}
+/* Passo 3 (Guilherme, 20/08/2026): rodapé global de ações — funciona em todas as abas */
+.footer-app {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-top: 1px solid #cbd5e1;
+  margin-top: 12px;
+  border-radius: 0 0 6px 6px;
+}
+.footer-btn-salvar { padding: 6px 14px !important; }
+
+/* Passo 5: autocomplete flutuante em Áreas Atendidas e Tags do Contrato */
+.autocomplete-wrap {
+  position: relative;
+  display: inline-block;
+  flex: 1;
+  min-width: 140px;
+  max-width: 260px;
+}
+.autocomplete-wrap .th-input-small {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 500;
+}
+.autocomplete-item {
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+.autocomplete-item:hover, .autocomplete-item.active {
+  background: #e0f2fe;
+  color: #005F73;
+}
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-empty {
+  padding: 8px 10px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Passo 6: input[type=date] oculto usado só pra abrir o calendário nativo do browser */
+.date-picker-hidden {
+  position: absolute;
+  opacity: 0;
+  width: 1px; height: 1px;
+  pointer-events: none;
+  right: 24px; top: 50%;
+}
+.th-cal-icon { cursor: pointer; }
+body.modo-app-visualizar .th-cal-icon { cursor: default; }
+
+/* Wrapper para inputs de data com ícone de calendário à direita (Dados Gerais e outras) */
+.date-input-wrap {
+  position: relative;
+  display: block;
+}
+.date-input-wrap .input-text { padding-right: 34px; }
+.date-input-wrap .th-cal-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.55;
+  pointer-events: auto;
+}
+.date-input-wrap .th-cal-icon:hover { opacity: 1; }
+body.modo-app-visualizar .date-input-wrap .th-cal-icon { display: none; }
+
+/* Passo 6: botões de ação inline ao lado do label (Objeto, Observação, etc.) */
+.label-actions {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.label-actions .input-action-btn { padding: 2px 6px; height: auto; font-size: 12px; }
+
+/* Passo 6 (Guilherme, 20/08/2026): botões de ação padronizados no estilo das abas Valores/Execução
+   (cinza claro, discretos, iguais ao .btn-copy-view usado em toda a app) */
+.input-with-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.input-with-actions .input-text { flex: 1; }
+.input-action-btn {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  padding: 4px 8px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  transition: background 0.15s;
+}
+.input-action-btn:hover { background: #e2e8f0; color: #005F73; }
+/* Botão de "Buscar processo" some no Modo Visualizar (ação de edição) */
+body.modo-app-visualizar .input-action-btn[title="Buscar processo"] { display: none; }
+
+
+/* Passo 4 (Guilherme, 20/08/2026): tabela com cabeçalho teal + histórico separado + modal Contratado grande */
+.dg-tabela {
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid #005F73;
+}
+.dg-tabela thead tr {
+  background: #005F73;
+  color: #fff;
+}
+.dg-tabela thead th {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: left;
+  border-right: 1px solid rgba(255,255,255,0.15);
+}
+.dg-tabela tbody td {
+  padding: 8px 12px;
+  font-size: 12px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+}
+.dg-tabela tbody tr:hover td { background: #f0f9fc; }
+.dg-historico-section {
+  margin-top: 18px;
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+.dg-historico-title {
+  font-weight: bold;
+  color: #64748b;
+  font-size: 13px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+/* Modal grande do Contratado com scroll interno */
+.modal-contratado-card {
+  max-width: 720px;
+  width: 90%;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 12px !important;
+}
+.modal-body-scroll {
+  overflow-y: auto;
+  padding-right: 6px;
+  margin: 12px 0;
+}
+.mc-contato-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.mc-contato-row input { flex: 1; }
+.mc-contato-row button {
+  padding: 4px 10px;
+  background: #d97706;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+}
+/* Passo 3b: Rodapé inteiro OCULTO em Modo Visualizar (só aparece em Editar com Salvar + Fechar) */
+body.modo-app-visualizar #footer-app { display: none; }
+/* Esconde ícones de calendário e botões-chip fecha no Modo Visualizar */
+body.modo-app-visualizar .th-cal-icon,
+body.modo-app-visualizar .badge-close,
+body.modo-app-visualizar .th-btn-salvar,
+body.modo-app-visualizar #hdrInputArea,
+body.modo-app-visualizar #hdrInputTag,
+body.modo-app-visualizar .dg-footer,
+body.modo-app-visualizar .dg-checks-block input[type="checkbox"] {
+  pointer-events: none;
+}
+body.modo-app-visualizar .th-cal-icon,
+body.modo-app-visualizar .badge-close,
+body.modo-app-visualizar .th-btn-salvar,
+body.modo-app-visualizar #hdrInputArea,
+body.modo-app-visualizar #hdrInputTag,
+body.modo-app-visualizar .dg-footer {
+  display: none !important;
+}
+/* Checkboxes em Visualizar: aparecem mas não podem ser clicados */
+body.modo-app-visualizar .dg-check-item {
+  opacity: 0.85;
+}
+body.modo-app-visualizar .dg-check-item input[type="checkbox"] {
+  cursor: default;
+}
+
+/* Dados Gerais — painel completo */
+.dg-panel {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 16px;
+}
+.dg-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.dg-col { display: flex; flex-direction: column; gap: 8px; }
+.dg-col .form-group { margin-bottom: 8px; }
+.dg-col label { font-size: 11px; font-weight: bold; color: #475569; }
+.dg-col .input-text.input-blue,
+.dg-col select.input-text.input-blue,
+.dg-col textarea.input-text.input-blue {
+  border: 1px solid #b6d4dc;
+  background: #f0f9fc;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #005F73;
+  width: 100%;
+  font-family: inherit;
+}
+.dg-col .input-text.input-blue:focus,
+.dg-col select.input-text.input-blue:focus,
+.dg-col textarea.input-text.input-blue:focus {
+  outline: none;
+  border-color: #005F73;
+  box-shadow: 0 0 0 2px rgba(0, 95, 115, 0.15);
+}
+.dg-info {
+  display: inline-block;
+  width: 14px; height: 14px;
+  line-height: 14px;
+  text-align: center;
+  border-radius: 50%;
+  background: #cbd5e1;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  cursor: help;
+  margin-left: 4px;
+}
+.dg-checks-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 0;
+}
+.dg-check-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #334155;
+  margin: 0;
+}
+.dg-prazo-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px !important;
+  margin-bottom: 0 !important;
+}
+.dg-prazo-inline label {
+  min-width: 130px;
+  margin-bottom: 0 !important;
+}
+/* Passo 10: Wrapper condicional dos campos de Encerramento (aparece só quando Encerrado marcado) */
+.dg-encerramento-details {
+  padding: 10px 12px;
+  background: #fef2f2;
+  border: 1px dashed #fca5a5;
+  border-radius: 4px;
+  margin: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dg-encerramento-details .form-group { margin-bottom: 0; }
+.obrigatorio { color: #dc2626 !important; font-weight: bold; }
+.asterisco-obrigatorio { color: #dc2626; font-weight: bold; }
+.input-obrigatorio {
+  border-color: #dc2626 !important;
+  background: #fff !important;
+}
+.input-obrigatorio::placeholder { color: #fca5a5; }
+/* Passo 12: célula Observação no Modo Editar — input + botão de copiar inline */
+.obs-cell-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.obs-cell-edit input { flex: 1; min-width: 0; }
+.obs-cell-edit .btn-copy-view { flex-shrink: 0; }
+
+/* Passo 13 (Guilherme, 28/08/2026): botão único do cabeçalho — estilo pílula outline com SVG limpo */
+.btn-sigecofi-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1.5px solid;
+}
+.btn-sigecofi-edit-outline {
+  background: #fff;
+  color: #005F73;
+  border-color: #005F73;
+}
+.btn-sigecofi-edit-outline:hover { background: #005F73; color: #fff; }
+.btn-sigecofi-vis-outline {
+  background: #fff;
+  color: #64748b;
+  border-color: #94a3b8;
+}
+.btn-sigecofi-vis-outline:hover { background: #f1f5f9; color: #334155; }
+
+/* Passo 13: Modal de alerta centralizado (envio de e-mail sem responsável) */
+.modal-alerta-card {
+  max-width: 480px;
+  padding: 28px 24px 20px !important;
+  text-align: center;
+  animation: modalAlertaIn 0.2s ease-out;
+}
+@keyframes modalAlertaIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.modal-alerta-icone {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.modal-alerta-titulo {
+  font-size: 18px;
+  font-weight: bold;
+  color: #dc2626;
+  margin-bottom: 10px;
+}
+.modal-alerta-mensagem {
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  text-align: left;
+  padding: 12px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+}
+/* Backdrop com blur */
+.modal-overlay {
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.dg-prazo-inline input { flex: 1; }
+.dg-dia-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: bold;
+}
+.dg-status-block { }
+.dg-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dg-responsavel {
+  font-size: 10px;
+  color: #475569;
+  font-weight: normal;
+}
+.dg-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+@media (max-width: 900px) {
+  .dg-cols { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Passo 1 (Guilherme, 19/08/2026): estilos das 7 abas novas
+   ============================================================ */
+.badge-encerrado {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  background: #dc2626;
+  color: #fff;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+}
+.dg-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.dg-label { font-size: 12px; font-weight: bold; color: #005F73; }
+.dg-tags-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.dg-tag-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; background: #e0f2fe; color: #005F73;
+  border-radius: 12px; font-size: 11px; font-weight: 500;
+}
+.dg-tag-chip button {
+  background: transparent; border: none; color: #005F73; cursor: pointer;
+  padding: 0; font-size: 14px; line-height: 1; font-weight: bold;
+}
+.dg-tag-input { flex: 1; min-width: 180px; max-width: 320px; padding: 5px 8px; font-size: 11px; }
+.dg-tag-btn { padding: 5px 10px; font-size: 11px; }
+.dg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.dg-full { grid-column: 1 / -1; }
+.dg-checks { grid-column: 1 / -1; display: flex; gap: 20px; flex-wrap: wrap; }
+.dg-check-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #334155; margin: 0; }
+.atores-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.atores-col { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; }
+.atores-list { padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+.ator-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;
+}
+
+/* Passo 8 (Guilherme, 20/08/2026): Atores completo — Grupos Ordenadores expansíveis */
+.grupo-card {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.grupo-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 12px;
+  background: #f0f9fc;
+  border-bottom: 1px solid #cbd5e1;
+  cursor: pointer;
+  gap: 8px;
+}
+.grupo-header:hover { background: #e0f2fe; }
+.grupo-body { padding: 10px 12px 12px; }
+.chevron-icon { font-size: 10px; color: #64748b; width: 14px; }
+.badge-status-ativo {
+  padding: 2px 8px; background: #d1fae5; color: #059669;
+  border-radius: 12px; font-size: 10px; font-weight: bold;
+}
+.badge-cinza {
+  padding: 2px 6px; background: #e0e7eb; color: #475569;
+  border-radius: 10px; font-size: 10px; font-weight: 500;
+}
+.subsecao {
+  padding: 8px 0;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 8px;
+}
+.subsecao:first-child { border-top: none; margin-top: 0; }
+.subsecao-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: bold; color: #005F73;
+  margin-bottom: 6px;
+}
+.responsavel-item {
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.fiscal-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  gap: 8px;
+}
+.fiscal-item.selecionado {
+  background: #ecfdf5;
+  border-color: #059669;
+  box-shadow: 0 0 0 1px #059669;
+}
+.suplentes-list {
+  background: #fafafa;
+  border-left: 3px solid #cbd5e1;
+  margin: 4px 0 6px 20px;
+  padding: 4px 0;
+  border-radius: 2px;
+}
+.suplente-item {
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #475569;
+}
+/* Botões pequenos */
+.btn-mini {
+  padding: 3px 8px;
+  font-size: 10px;
+  background: #f1f5f9;
+  color: #005F73;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.btn-mini:hover { background: #e0f2fe; }
+.btn-mini-verde {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.btn-mini-verde:hover { background: #15803d; }
+.btn-mini-orange {
+  padding: 3px 8px;
+  font-size: 10px;
+  background: #d97706;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.btn-mini-orange:hover { background: #b45309; }
+.btn-mini-laranja {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: #fbbf24;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+  border-radius: 3px;
+  cursor: pointer;
+}
+/* Passo 9 (Guilherme, 20/08/2026): Botão amarelo "Enviar E-mail" na aba Diário */
+.btn-diario-email {
+  background: #fbbf24;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-diario-email:hover { background: #f59e0b; color: #fff; }
+.btn-diario-email:disabled { opacity: 0.55; cursor: not-allowed; }
+/* Registro imutável (histórico) — visual mais suave, sem botões de edição */
+.diario-linha-imutavel td {
+  background: #f8fafc;
+  color: #64748b;
+  font-style: italic;
+}
+.diario-linha-imutavel .badge-imutavel {
+  padding: 1px 6px;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: bold;
+  margin-left: 4px;
+  vertical-align: middle;
+  font-style: normal;
+}
+.ator-demais-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+@media (max-width: 900px) {
+  .dg-grid { grid-template-columns: 1fr; }
+  .atores-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .top-dev-bar { flex-wrap: wrap; gap: 6px; padding: 6px; }
+  .dev-card { flex: 1 1 auto; min-width: 0; }
+  .dev-name { font-size: 10px; }
+  .cards-grid-7 { grid-template-columns: 1fr; }
+  .btn-tratamento { padding: 3px 6px; font-size: 10px; }
+  .tratamento-label { display: none; }
+  /* modals ficam em coluna */
+  .modal-card [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+}
