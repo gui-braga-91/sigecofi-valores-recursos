@@ -825,9 +825,13 @@ function renderizarValoresAtivos() {
                     return `
                       <tr>
                         <td>${lEditF ? (() => {
-                          const areasContrato = Array.isArray(headerAreas) && headerAreas.length > 0 ? headerAreas : ['DETIC','TESOURO'];
-                          const opcoes = areasContrato.includes(f.area||'') ? areasContrato : [...(f.area ? [f.area] : []), ...areasContrato];
-                          return `<select id="f_area_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','area',this.value)" class="input-plain"><option value="">—</option>${opcoes.map(a=>`<option value="${_htmlEsc(a)}" ${f.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</select>`;
+                          const usadas = Array.isArray(headerAreas) ? headerAreas : [];
+                          const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
+                          const grupoUsadas = usadas.length > 0
+                            ? `<optgroup label="Áreas atendidas">${usadas.map(a=>`<option value="${_htmlEsc(a)}" ${f.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
+                          const grupoOutras = `<optgroup label="Demais áreas">${outras.map(a=>`<option value="${_htmlEsc(a)}" ${f.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
+                          const extra = (f.area && !OPCOES_AREAS.includes(f.area)) ? `<option value="${_htmlEsc(f.area)}" selected>${_htmlEsc(f.area)} (personalizada)</option>` : '';
+                          return `<select id="f_area_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','area',this.value)" class="input-plain"><option value="">—</option>${extra}${grupoUsadas}${grupoOutras}</select>`;
                         })() : (f.area || '—')}</td>
                         <td>${lEditF ? copyGroupInput(`f_uo_${f.id}`, f.uo, '') : (f.uo + copyBtnView(f.uo))}</td>
                         <td>${lEditF ? `<select id="f_rec_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','recurso',this.value)" class="input-plain">${Object.entries(RECURSOS_CATALOG).map(([c,n])=>`<option value="${c}" ${String(f.recurso).trim()===c?'selected':''}>${c} - ${n}</option>`).join('')}</select>` : (formatarRecursoLabel(f) + copyBtnView(f.recurso))}</td>
@@ -1413,7 +1417,15 @@ function renderizarExecucaoFinanceira() {
           </thead>
           <tbody>
             <tr style="background:#fff;">
-              <td>${lEditE ? `<input type="text" id="e_area_${emp.id}" value="${emp.area}" class="input-plain">` : emp.area}</td>
+              <td>${lEditE ? (() => {
+                const usadas = Array.isArray(headerAreas) ? headerAreas : [];
+                const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
+                const grupoUsadas = usadas.length > 0
+                  ? `<optgroup label="Áreas atendidas">${usadas.map(a=>`<option value="${_htmlEsc(a)}" ${emp.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
+                const grupoOutras = `<optgroup label="Demais áreas">${outras.map(a=>`<option value="${_htmlEsc(a)}" ${emp.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
+                const extra = (emp.area && !OPCOES_AREAS.includes(emp.area)) ? `<option value="${_htmlEsc(emp.area)}" selected>${_htmlEsc(emp.area)} (personalizada)</option>` : '';
+                return `<select id="e_area_${emp.id}" class="input-plain"><option value="">—</option>${extra}${grupoUsadas}${grupoOutras}</select>`;
+              })() : emp.area}</td>
               <td>${lEditE ? `<input type="text" id="e_proj_${emp.id}" value="${emp.projeto}" class="input-plain">` : `<strong>${emp.projeto}</strong>`}</td>
               <td>${lEditE ? copyGroupInput(`e_num_${emp.id}`, emp.numeroEmpenho, '') : `${emp.numeroEmpenho} ${copyBtnView(emp.numeroEmpenho)}`}</td>
               <td>${lEditE ? copyGroupInput(`e_nad_${emp.id}`, emp.nad, 'applyNADMask(this)') : emp.nad}</td>
@@ -1504,6 +1516,16 @@ function salvarEdicaoParcela(empId, parId) {
 function abrirModalNovoEmpenho() {
   const m = document.getElementById('modalNovoEmpenho');
   if(m) m.classList.remove('hidden');
+  // Passo 14 (revisão 02/09/2026): popular dropdown de Área institucional
+  const sel = document.getElementById('inputEmpArea');
+  if(sel && sel.tagName === 'SELECT') {
+    const usadas = Array.isArray(headerAreas) ? headerAreas : [];
+    const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
+    const grupoUsadas = usadas.length > 0
+      ? `<optgroup label="Áreas atendidas deste contrato">${usadas.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
+    const grupoOutras = `<optgroup label="Demais áreas institucionais">${outras.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
+    sel.innerHTML = '<option value="">Selecione a área...</option>' + grupoUsadas + grupoOutras;
+  }
 }
 
 function fecharModalNovoEmpenho() {
@@ -1625,12 +1647,17 @@ function abrirModalProjeto(parentId) {
 
   toggleNovoProjInput(select.value);
 
-  // Passo 14 (refinamento 4, 02/09/2026): popular dropdown de Área com as Áreas Atendidas do contrato
+  // Passo 14 (refinamento 4, 02/09/2026): popular dropdown de Área
+  // Passo 14 (revisão, 02/09/2026): usa o catálogo institucional COMPLETO (OPCOES_AREAS)
+  // — as áreas do contrato ficam no topo, o restante do catálogo aparece agrupado abaixo.
   const selectArea = document.getElementById('inputNovaFracArea');
   if(selectArea) {
-    const areasContrato = Array.isArray(headerAreas) && headerAreas.length > 0 ? headerAreas : ['DETIC','TESOURO'];
-    selectArea.innerHTML = '<option value="">Selecione a área atendida...</option>' +
-      areasContrato.map(a => `<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('');
+    const usadas = Array.isArray(headerAreas) ? headerAreas : [];
+    const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
+    const grupoUsadas = usadas.length > 0
+      ? `<optgroup label="Áreas atendidas deste contrato">${usadas.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
+    const grupoOutras = `<optgroup label="Demais áreas institucionais">${outras.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
+    selectArea.innerHTML = '<option value="">Selecione a área...</option>' + grupoUsadas + grupoOutras;
   }
 
   const modalSel = document.getElementById('modalSelectProjeto');
@@ -2062,7 +2089,9 @@ function renderHeaderChips() {
   }
 }
 // Passo 5 (Guilherme, 20/08/2026): autocomplete flutuante com sugestões padrão
-const OPCOES_AREAS = ['DETIC', 'TESOURO', 'GSF', 'RECEITA', 'DEPAD', 'ACCESS', 'JORNAL VALE'];
+// Passo 14 (refinamento, 02/09/2026): catálogo institucional único usado em TODOS os dropdowns de Área
+// (cabeçalho / valores e recursos / execução financeira). Ordem alfabética.
+const OPCOES_AREAS = ['ACCESS','CAGE','DEPAD','DETIC','DICAF','GSF','JORNAL VALE','RECEITA','SECC','SEFIN','SGC','TARF','TESOURO'];
 const OPCOES_TAGS  = ['SIGECOFI', 'PROMOVE', 'Fábrica de Software', 'Consultoria', 'Manutenção', 'TI', 'Encerrado', 'Prioritário'];
 function renderSugestoes(tipo, termo) {
   const opcoes = tipo === 'area' ? OPCOES_AREAS : OPCOES_TAGS;

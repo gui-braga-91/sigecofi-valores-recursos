@@ -753,7 +753,10 @@
       </div>
       <div class="form-group">
         <label>Área:</label>
-        <input type="text" id="inputEmpArea" placeholder="Ex: DETIC, Tesouro..." class="input-text" />
+        <!-- Passo 14 (revisão 02/09/2026): dropdown único de Área institucional; populado por popularSelectAreaEmpenho() -->
+        <select id="inputEmpArea" class="input-text" style="background:#fff;">
+          <option value="">Selecione a área...</option>
+        </select>
       </div>
       <div class="form-group">
         <label>Número do Empenho:</label>
@@ -854,6 +857,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=42"></script>
+  <script src="script.js?v=43"></script>
 </body>
 </html>
