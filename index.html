@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SIGECOFI - Módulo Contratos</title>
-  <link rel="stylesheet" href="style.css?v=21" />
+  <link rel="stylesheet" href="style.css?v=22" />
 </head>
 <body>
 
@@ -36,6 +36,13 @@
         </a>
       </div>
       <!-- Passo 3 (Guilherme, 20/08/2026): botões de modo movidos para o rodapé global (footer-app) -->
+      <!-- Passo 19 (Sabrina + Ana Paula, 03/09/2026): Seletor de Perfil (Padrão x Master) -->
+      <div class="perfil-switch">
+        <span class="perfil-switch-label">PERFIL</span>
+        <button type="button" id="btnPerfilPadrao" onclick="setPerfilAtivo('padrao')" class="btn-perfil perfil-ativo" title="Operador comum: para excluir precisa solicitar autorização de uma chefia setorial">Padrão</button>
+        <button type="button" id="btnPerfilMaster" onclick="setPerfilAtivo('master')" class="btn-perfil" title="Administrador: pode excluir diretamente após motivo + senha">Master</button>
+        <span id="perfilAtivoNome" class="perfil-nome-ativo" title="Usuário logado neste perfil">Guilherme Alves Braga</span>
+      </div>
     </div>
 
     <!-- CABEÇALHO DO CONTRATO (refinado, similar ao SIGECOFI real) -->
@@ -504,6 +511,62 @@
 
   <!-- MODAIS DE AÇÕES, OBSERVAÇÕES E PROJETOS -->
   <!-- MODAL: CONFIRMAÇÃO GERAL -->
+  <!-- Passo 19 (Sabrina + Ana Paula, 03/09/2026): Modal de SOLICITAÇÃO de exclusão (Perfil Padrão) -->
+  <div id="modalSolicitacaoExclusao" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 560px;">
+      <button onclick="fecharModalSolicitacaoExclusao()" class="modal-close-x" title="Cancelar">×</button>
+      <div class="modal-title" style="color:#005F73;">📨 Solicitar Exclusão de Registro para Autoridade Setorial</div>
+      <div class="modal-desc">Como você está no <strong>Perfil Padrão</strong>, a exclusão definitiva depende da autorização da chefia setorial responsável. Descreva o motivo e escolha a autoridade.</div>
+
+      <div class="audit-box">
+        <div class="audit-title">Dados da solicitação</div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div class="form-group" style="margin:0;">
+            <label>Solicitante</label>
+            <input type="text" id="inputSolicitanteNome" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label>Data e Hora</label>
+            <input type="text" id="inputSolicitanteData" class="input-text" disabled style="background:#e2e8f0; color:#475569; border-color:#cbd5e1; cursor:not-allowed;" />
+          </div>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label for="inputSolicitanteMotivo">Motivo / Justificativa detalhada (Obrigatório):</label>
+          <textarea id="inputSolicitanteMotivo" class="textarea-motivo" rows="3" placeholder="Descreva por que este registro precisa ser excluído..."></textarea>
+        </div>
+      </div>
+
+      <div class="audit-box" style="background:#f0f9ff; border-color:#93c5fd; margin-top:12px;">
+        <div class="audit-title" style="color:#1e40af;">Autoridade Setorial Responsável</div>
+        <div class="form-group" style="margin:0;">
+          <label for="selectAutoridadeSetorial" style="color:#1e40af; font-weight:700;">Selecione a Chefia/Setor responsável para autorização:</label>
+          <select id="selectAutoridadeSetorial" class="input-text" style="background:#fff;">
+            <option value="">Selecione a autoridade responsável...</option>
+            <optgroup label="Departamento de Administração (DEPAD)">
+              <option value="DEPAD - Adriana Oliveira da Silva">DEPAD · Adriana Oliveira da Silva (Chefe do Departamento)</option>
+            </optgroup>
+            <optgroup label="Divisão de Contratos Administrativos e Finanças (DICAF)">
+              <option value="DICAF - Joana Dutra Silva">DICAF · Joana Dutra Silva (Chefe da Divisão)</option>
+              <option value="DICAF - Ana Paula Pasqualotto">DICAF · Ana Paula Pasqualotto (Coordenação de Contratos)</option>
+              <option value="DICAF - Darko Rodrigues Bufolin Kraciloviski">DICAF · Darko Rodrigues Bufolin Kraciloviski</option>
+            </optgroup>
+            <optgroup label="Seções Subordinadas à DICAF">
+              <option value="SGC - Valdemyr Garcia Rieta Junior">SGC · Valdemyr Garcia Rieta Junior (Chefe · Gestão de Contratos)</option>
+              <option value="SEFIN - Fabricio Schonarth">SEFIN · Fabricio Schonarth (Chefe · Seção de Finanças)</option>
+              <option value="SECC - Breno Caetano Diniz">SECC · Breno Caetano Diniz (Chefe · Compras e Contratações)</option>
+            </optgroup>
+          </select>
+          <div style="font-size:11px; color:#1e40af; margin-top:6px; font-style:italic;">A solicitação será encaminhada para análise. O registro permanecerá ativo até que a autoridade aprove.</div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button onclick="fecharModalSolicitacaoExclusao()" class="btn-modal-sec">Cancelar</button>
+        <button onclick="confirmarSolicitacaoExclusao()" class="btn-modal-pri" style="background:#005F73;">Enviar Solicitação</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modalConfirmacao" class="modal-overlay hidden">
     <div class="modal-card" style="max-width: 500px;">
       <button onclick="fecharModalConfirmacao()" class="modal-close-x" title="Cancelar">×</button>
@@ -891,6 +954,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=48"></script>
+  <script src="script.js?v=49"></script>
 </body>
 </html>

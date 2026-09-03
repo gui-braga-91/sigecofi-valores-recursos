@@ -462,6 +462,59 @@ td {
   text-overflow: ellipsis;
 }
 
+/* Passo 19 (Sabrina + Ana Paula, 03/09/2026): Seletor de Perfil no topo (Padrão x Master) */
+.perfil-switch {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.perfil-switch-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+.btn-perfil {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-perfil:hover { color: #fff; background: rgba(255, 255, 255, 0.12); }
+.btn-perfil.perfil-ativo {
+  background: #fff;
+  color: #005F73;
+  border-color: #fff;
+}
+.btn-perfil.perfil-ativo[data-perfil="master"],
+#btnPerfilMaster.perfil-ativo {
+  background: #f97316;
+  color: #fff;
+  border-color: #f97316;
+}
+.perfil-nome-ativo {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-style: italic;
+  padding-left: 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  margin-left: 2px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Passo 17 (Sabrina + Ana Paula, 02/09/2026): bug de colapso na edição inline.
    Todos os inputs/selects dentro de células respeitam a largura da coluna
    (fixed layout) e não empurram/achatam as vizinhas. */

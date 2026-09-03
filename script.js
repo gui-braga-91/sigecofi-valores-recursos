@@ -1973,6 +1973,12 @@ function initResizableColumns() {
 
 // CONFIRMAÇÃO GLOBAL E AÇÕES DE SALVAMENTO/EXCLUSÃO/INATIVAÇÃO
 function abrirConfirmacao(tipo, pId, fId = null) {
+  // Passo 19 (Sabrina + Ana Paula, 03/09/2026): roteamento por PERFIL
+  // Exclusões pelo Perfil PADRÃO viram SOLICITAÇÃO à autoridade setorial.
+  if (perfilAtivo === 'padrao' && typeof tipo === 'string' && tipo.indexOf('excluir') === 0) {
+    abrirModalSolicitacaoExclusao(tipo, pId, fId);
+    return;
+  }
   acaoPendente = { tipo, pId, fId };
   const titulo = document.getElementById('modalConfirmTitle');
   const desc = document.getElementById('modalConfirmDesc');
@@ -2019,6 +2025,105 @@ function abrirConfirmacao(tipo, pId, fId = null) {
 const SENHAS_MASTER = ['admin123', 'master@2026'];
 window.logAuditoriaExclusoes = window.logAuditoriaExclusoes || [];
 
+// Passo 19 (Sabrina + Ana Paula, 03/09/2026): sistema de perfis (Padrão x Master)
+// Usuários Master de teste. Em produção viria do IAM/SSO.
+const USUARIOS_MASTER = ['Guilherme Alves Braga', 'Ana Paula Pasqualotto', 'Valdemyr Garcia Rieta Junior'];
+let perfilAtivo = 'padrao'; // 'padrao' | 'master'
+let usuarioLogado = 'Guilherme Alves Braga';
+window.logSolicitacoesExclusao = window.logSolicitacoesExclusao || [];
+
+function setPerfilAtivo(p) {
+  if(p !== 'padrao' && p !== 'master') return;
+  if(p === 'master' && !USUARIOS_MASTER.includes(usuarioLogado)) {
+    alert('Usuário "' + usuarioLogado + '" não possui permissão MASTER.\n\nApenas os seguintes usuários podem operar em modo Master:\n· ' + USUARIOS_MASTER.join('\n· '));
+    return;
+  }
+  perfilAtivo = p;
+  document.getElementById('btnPerfilPadrao')?.classList.toggle('perfil-ativo', p === 'padrao');
+  document.getElementById('btnPerfilMaster')?.classList.toggle('perfil-ativo', p === 'master');
+  const nome = document.getElementById('perfilAtivoNome');
+  if(nome) nome.textContent = usuarioLogado + (p === 'master' ? ' (MASTER)' : ' (Padrão)');
+  mostrarToast('Perfil ativo: ' + (p === 'master' ? 'MASTER · exclusões diretas com senha' : 'PADRÃO · exclusões apenas por solicitação'));
+}
+
+// Passo 19: fluxo alternativo — Perfil Padrão abre modal de SOLICITAÇÃO em vez de exclusão direta
+let solicitacaoPendente = null; // { tipo, pId, fId }
+function abrirModalSolicitacaoExclusao(tipo, pId, fId) {
+  solicitacaoPendente = { tipo, pId, fId };
+  const nome = document.getElementById('inputSolicitanteNome');
+  const dt   = document.getElementById('inputSolicitanteData');
+  const mot  = document.getElementById('inputSolicitanteMotivo');
+  const sel  = document.getElementById('selectAutoridadeSetorial');
+  const now  = new Date();
+  if(nome) nome.value = usuarioLogado;
+  if(dt)   dt.value   = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  if(mot)  mot.value  = '';
+  if(sel)  sel.value  = '';
+  document.getElementById('modalSolicitacaoExclusao')?.classList.remove('hidden');
+}
+function fecharModalSolicitacaoExclusao() {
+  document.getElementById('modalSolicitacaoExclusao')?.classList.add('hidden');
+  solicitacaoPendente = null;
+}
+function confirmarSolicitacaoExclusao() {
+  if(!solicitacaoPendente) return;
+  const mot = document.getElementById('inputSolicitanteMotivo')?.value.trim() || '';
+  const aut = document.getElementById('selectAutoridadeSetorial')?.value || '';
+  if(!mot) { alert('Descreva o motivo da solicitação (obrigatório para auditoria).'); return; }
+  if(!aut) { alert('Selecione a autoridade setorial responsável pela análise.'); return; }
+  const { tipo, pId, fId } = solicitacaoPendente;
+  let alvoDesc = pId;
+  if(tipo === 'excluir_pai') {
+    const a = recursosAtivos.find(x => x.id === pId);
+    if(a) alvoDesc = `${a.instrumento} nº ${a.numero} · ${formatarMoedaBR(a.valorAtualizado)}`;
+  } else if(tipo === 'excluir_fracao') {
+    const p = recursosAtivos.find(x => x.id === pId);
+    const f = p?.fracoes.find(x => x.id === fId);
+    if(p && f) alvoDesc = `Fração ${f.area || '-'} / Projeto ${f.projeto || '-'} do instrumento ${p.instrumento} nº ${p.numero}`;
+  } else if(tipo === 'excluir_empenho') {
+    const e = empenhosAtivos.find(x => x.id === pId);
+    if(e) alvoDesc = `Empenho ${e.numeroEmpenho} · ${e.area}`;
+  } else if(tipo === 'excluir_parcela') {
+    const e = empenhosAtivos.find(x => x.id === pId);
+    const par = e?.parcelas.find(x => x.id === fId);
+    if(par) alvoDesc = `Parcela ${par.comp} · ${formatarMoedaBR(par.valorParcela)}`;
+  }
+  const now = new Date();
+  const entry = {
+    dataHora: now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}),
+    solicitante: usuarioLogado + ' (Padrão)',
+    autoridade: aut,
+    alvo: alvoDesc,
+    motivo: mot,
+    status: 'SOLICITACAO_EXCLUSAO_PENDENTE'
+  };
+  window.logSolicitacoesExclusao.push(entry);
+  console.log('[SIGECOFI · Log de Solicitação de Exclusão]', entry);
+  fecharModalSolicitacaoExclusao();
+  mostrarToast('Solicitação de exclusão enviada com sucesso para análise da chefia selecionada.');
+}
+
+// Passo 19 (Sabrina + Ana Paula, 03/09/2026): função reativar (estava ausente e quebrava a tela!)
+// Restaura o instrumento arquivado para a base ativa com carimbo de auditoria.
+function reativar(idInativo) {
+  const idx = recursosInativos.findIndex(x => x.id === idInativo);
+  if(idx < 0) return;
+  const motivo = prompt('Reativação de recurso — informe a justificativa (obrigatória para auditoria):');
+  if(motivo === null) return;
+  if(!motivo.trim()) { alert('É obrigatório informar a justificativa da reativação.'); return; }
+  const item = recursosInativos.splice(idx, 1)[0];
+  const now = new Date();
+  item.motivoReativacao = motivo.trim();
+  item.dataReativacao = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  item.reativadoPor = usuarioLogado;
+  item.editando = false;
+  recursosAtivos.push(item);
+  recursosAtivos.sort(_ordenaInstrumento);
+  registrarLogAcao('REATIVACAO_INSTRUMENTO', `${item.instrumento} nº ${item.numero} · ${formatarMoedaBR(item.valorAtualizado)}`, motivo.trim());
+  renderizar();
+  mostrarToast('Recurso reativado com sucesso.');
+}
+
 function fecharModalConfirmacao() {
   const modalConf = document.getElementById('modalConfirmacao');
   if(modalConf) modalConf.classList.add('hidden');
@@ -2056,12 +2161,12 @@ function executarAcaoConfirmada() {
   //  - Excluir = remocao definitiva + log central (registrarLogAcao) + log Master (window.logAuditoriaExclusoes)
   //  - Inativar = arquiva na tabela de Inativos (reversivel via Reativar) + carimbo imutavel.
   const motivoTxt = inputMotivo ? inputMotivo.value.trim() : '';
-  // Passo 18 (Sabrina + Ana Paula, 02/09/2026): campos do log conforme especificação final
+  // Passo 18/19 (Sabrina + Ana Paula, 02-03/09/2026): schema final do log Master
   const _logMaster = (alvoDescricao) => {
     const now = new Date();
     const entry = {
       dataHora: now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}),
-      operador: 'Guilherme Alves Braga (MASTER)',
+      operador: usuarioLogado + ' (MASTER)',
       alvo: alvoDescricao,
       motivo: motivoTxt,
       status: 'EXCLUIDO_COM_SUCESSO'
@@ -2970,7 +3075,10 @@ function persistState() {
         },
         contratados, evolucoes, processos, atoresGrupos, atoresDemais,
         garantias, semGarantia, diarios,
-        logAcoes
+        logAcoes,
+        perfilAtivo, usuarioLogado,
+        logMasterExclusoes: window.logAuditoriaExclusoes,
+        logSolicitacoesExclusao: window.logSolicitacoesExclusao
       };
       localStorage.setItem(LS_KEY, JSON.stringify(snap));
     } catch(e) { /* silencioso */ }
@@ -2996,6 +3104,12 @@ function restoreState() {
     semGarantia = !!s.semGarantia;
     diarios = s.diarios || [];
     logAcoes = Array.isArray(s.logAcoes) ? s.logAcoes : [];
+    if(typeof s.perfilAtivo === 'string')   perfilAtivo   = s.perfilAtivo;
+    if(typeof s.usuarioLogado === 'string') usuarioLogado = s.usuarioLogado;
+    window.logAuditoriaExclusoes  = Array.isArray(s.logMasterExclusoes) ? s.logMasterExclusoes : [];
+    window.logSolicitacoesExclusao = Array.isArray(s.logSolicitacoesExclusao) ? s.logSolicitacoesExclusao : [];
+    // Aplica o toggle visual do perfil já no boot
+    setTimeout(() => setPerfilAtivo(perfilAtivo), 0);
   } catch(e) { /* silencioso */ }
 }
 function aplicarDadosGeraisDoStorage() {
