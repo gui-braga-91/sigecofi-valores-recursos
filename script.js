@@ -329,11 +329,22 @@ function recalcularFracoesAtivas() {
   });
 }
 
+// Passo 18 (Sabrina + Ana Paula, 02/09/2026): máscara monetária estilo calculadora.
+// Digitação flui da direita para a esquerda em centavos:
+//   6 -> R$ 0,06     0 -> R$ 0,60     0 -> R$ 6,00     0 -> R$ 60,00     0 -> R$ 600,00
+// Cursor sempre no final; nunca obriga o usuário a apagar o zero inicial manualmente.
 function applyCurrencyMask(el) {
-  let value = el.value.replace(/\D/g, '');
-  if(value === '') { el.value = ''; return; }
-  value = (parseInt(value, 10) / 100).toFixed(2);
-  el.value = 'R$ ' + value.replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+  const digits = (el.value || '').replace(/\D/g, '');
+  if(!digits) { el.value = ''; return; }
+  // Remove zeros à esquerda mantendo pelo menos 3 dígitos (centavos preservados)
+  let normalized = digits.replace(/^0+/, '') || '0';
+  if(normalized.length < 3) normalized = normalized.padStart(3, '0');
+  const int  = normalized.slice(0, -2);
+  const cent = normalized.slice(-2);
+  const intFmt = int.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  el.value = 'R$ ' + intFmt + ',' + cent;
+  // Reposiciona o cursor no final (evita cursor "preso" antes do R$)
+  try { el.setSelectionRange(el.value.length, el.value.length); } catch(_) {}
 }
 
 function applyDateMask(el) {
@@ -878,20 +889,20 @@ function renderizarValoresAtivos() {
             </div>
             ${isProjExpanded ? `
             <div class="table-responsive">
-              <table class="resizable-table" style="min-width: 1150px; border-top: 1px solid #c0dde5;">
+              <table class="resizable-table tabela-fracao-n2" style="border-top: 1px solid #c0dde5;">
                 <thead>
                   <tr style="background:#f8fafc; color:#334155;">
-                    <th style="width:8%;">Área</th>
-                    <th style="width:5%;">UO</th>
-                    <th style="width:8%;">Recurso</th>
-                    <th style="width:12%;">NAD</th>
-                    <th style="width:18%;">Período</th>
-                    ${_porHoras ? '<th style="width:8%;">Qtd. Horas</th>' : ''}
-                    ${_porHoras ? '<th style="width:10%;">Valor da Hora</th>' : ''}
-                    <th style="width:6%;">%</th>
-                    <th style="width:12%;">Valor Fracionado</th>
-                    <th style="width:11%;">OBSERVAÇÃO</th>
-                    <th style="text-align:center; width:${isEditGlobal ? '12%' : '7%'};">Ações</th>
+                    <th class="col-area">Área</th>
+                    <th class="col-uo">UO</th>
+                    <th class="col-recurso">Recurso</th>
+                    <th class="col-nad">NAD</th>
+                    <th class="col-periodo">Período</th>
+                    ${_porHoras ? '<th class="col-qtdh">Qtd. Horas</th>' : ''}
+                    ${_porHoras ? '<th class="col-valh">Valor da Hora</th>' : ''}
+                    <th class="col-pct">%</th>
+                    <th class="col-valfrac">Valor Fracionado</th>
+                    <th class="col-obs">OBSERVAÇÃO</th>
+                    <th class="col-acoes" style="text-align:center;">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -901,7 +912,7 @@ function renderizarValoresAtivos() {
                     const qtdHorasStr = (f.qtdHoras || 0).toLocaleString('pt-BR', {maximumFractionDigits: 2});
                     return `
                       <tr>
-                        <td>${lEditF ? (() => {
+                        <td class="col-area">${lEditF ? (() => {
                           const usadas = Array.isArray(headerAreas) ? headerAreas : [];
                           const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
                           const grupoUsadas = usadas.length > 0
@@ -910,16 +921,16 @@ function renderizarValoresAtivos() {
                           const extra = (f.area && !OPCOES_AREAS.includes(f.area)) ? `<option value="${_htmlEsc(f.area)}" selected>${_htmlEsc(f.area)} (personalizada)</option>` : '';
                           return `<select id="f_area_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','area',this.value)" class="input-plain"><option value="">—</option>${extra}${grupoUsadas}${grupoOutras}</select>`;
                         })() : (f.area || '—')}</td>
-                        <td>${lEditF ? copyGroupInput(`f_uo_${f.id}`, f.uo, '') : (f.uo + copyBtnView(f.uo))}</td>
-                        <td>${lEditF ? `<select id="f_rec_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','recurso',this.value)" class="input-plain">${Object.entries(RECURSOS_CATALOG).map(([c,n])=>`<option value="${c}" ${String(f.recurso).trim()===c?'selected':''}>${c} - ${n}</option>`).join('')}</select>` : (formatarRecursoLabel(f) + copyBtnView(f.recurso))}</td>
-                        <td>${lEditF ? copyGroupInput(`f_nad_${f.id}`, f.nad, 'applyNADMask(this)', 'X.X.XX.XX.XXXX') : (f.nad + copyBtnView(f.nad))}</td>
-                        <td>${lEditF ? `<input type="text" id="f_per_${f.id}" value="${f.periodo}" oninput="applyPeriodMask(this)" class="input-plain">` : f.periodo}</td>
-                        ${_porHoras ? `<td>${lEditF ? `<input type="text" id="f_qtdh_${f.id}" value="${f.qtdHoras || ''}" oninput="syncFractionFromHoras('${item.id}','${f.id}','${pCode}',this)" class="input-plain" style="text-align:right;" placeholder="0">` : (f.qtdHoras ? qtdHorasStr + ' h' : '—')}</td>` : ''}
-                        ${_porHoras ? `<td>${lEditF ? `<input type="text" id="f_valh_${f.id}" value="${f.valorHora ? formatarMoedaBR(f.valorHora) : ''}" oninput="applyCurrencyMask(this); syncFractionFromValorHora('${item.id}','${f.id}','${pCode}',this)" class="input-plain" placeholder="R$ 0,00">` : (f.valorHora ? formatarMoedaBR(f.valorHora) : '—')}</td>` : ''}
-                        <td>${lEditF ? `<div style="display:flex; align-items:center; gap:4px;"><input type="text" id="f_pct_${f.id}" value="${pctStr}" oninput="syncFractionFromPct('${item.id}', '${f.id}', '${pCode}', this)" class="input-plain" style="width:50px;">%</div>` : `<strong>${pctStr}%</strong>`}</td>
-                        <td>${lEditF ? `<input type="text" id="f_val_${f.id}" value="${formatarMoedaBR(f.val)}" oninput="applyCurrencyMask(this); syncFractionFromVal('${item.id}', '${f.id}', '${pCode}', this)" class="input-plain">` : `<strong>${formatarMoedaBR(f.val)}</strong>`}</td>
+                        <td class="col-uo">${lEditF ? copyGroupInput(`f_uo_${f.id}`, f.uo, '') : (f.uo + copyBtnView(f.uo))}</td>
+                        <td class="col-recurso">${lEditF ? `<select id="f_rec_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','recurso',this.value)" class="input-plain">${Object.entries(RECURSOS_CATALOG).map(([c,n])=>`<option value="${c}" ${String(f.recurso).trim()===c?'selected':''}>${c} - ${n}</option>`).join('')}</select>` : (formatarRecursoLabel(f) + copyBtnView(f.recurso))}</td>
+                        <td class="col-nad">${lEditF ? copyGroupInput(`f_nad_${f.id}`, f.nad, 'applyNADMask(this)', 'X.X.XX.XX.XXXX') : (f.nad + copyBtnView(f.nad))}</td>
+                        <td class="col-periodo">${lEditF ? `<input type="text" id="f_per_${f.id}" value="${f.periodo}" oninput="applyPeriodMask(this)" class="input-plain">` : f.periodo}</td>
+                        ${_porHoras ? `<td class="col-qtdh">${lEditF ? `<input type="text" id="f_qtdh_${f.id}" value="${f.qtdHoras || ''}" oninput="syncFractionFromHoras('${item.id}','${f.id}','${pCode}',this)" class="input-plain" style="text-align:right;" placeholder="0">` : (f.qtdHoras ? qtdHorasStr + ' h' : '—')}</td>` : ''}
+                        ${_porHoras ? `<td class="col-valh">${lEditF ? `<input type="text" id="f_valh_${f.id}" value="${f.valorHora ? formatarMoedaBR(f.valorHora) : ''}" oninput="applyCurrencyMask(this); syncFractionFromValorHora('${item.id}','${f.id}','${pCode}',this)" class="input-plain" placeholder="R$ 0,00">` : (f.valorHora ? formatarMoedaBR(f.valorHora) : '—')}</td>` : ''}
+                        <td class="col-pct">${lEditF ? `<div style="display:flex; align-items:center; gap:4px;"><input type="text" id="f_pct_${f.id}" value="${pctStr}" oninput="syncFractionFromPct('${item.id}', '${f.id}', '${pCode}', this)" class="input-plain" style="width:50px;">%</div>` : `<strong>${pctStr}%</strong>`}</td>
+                        <td class="col-valfrac">${lEditF ? `<input type="text" id="f_val_${f.id}" value="${formatarMoedaBR(f.val)}" oninput="applyCurrencyMask(this); syncFractionFromVal('${item.id}', '${f.id}', '${pCode}', this)" class="input-plain">` : `<strong>${formatarMoedaBR(f.val)}</strong>`}</td>
                         
-                        <td style="${!lEditF ? 'max-width:120px;' : ''}">
+                        <td class="col-obs">
                           ${lEditF
                             ? `<input type="text" id="f_obs_${f.id}" value="${f.obs}" placeholder="Observação livre..." class="input-plain">`
                             : `<div style="display:flex; align-items:center; justify-content: space-between; gap:6px;">
@@ -929,7 +940,7 @@ function renderizarValoresAtivos() {
                           }
                         </td>
 
-                        <td style="text-align:center; white-space:nowrap;">
+                        <td class="col-acoes" style="text-align:center; white-space:nowrap;">
                           <div style="display:inline-flex; gap:6px; align-items:center; justify-content:center; width: 100%;">
                             <button onclick="abrirModalObservacao('${item.id}', '${f.id}')" class="btn-square-gray" title="Visualizar Observação Completa">${iconEye}</button>
                             ${isEditGlobal ? `
@@ -1739,30 +1750,43 @@ function abrirModalProjeto(parentId) {
     selectArea.innerHTML = '<option value="">Selecione a área...</option>' + grupoUsadas + grupoOutras;
   }
 
-  // Passo 16: gatilho "Contrato medido por horas?" já marcado quando pai é por horas
-  const chk = document.getElementById('chkContratoPorHoras');
-  const grp = document.getElementById('grpFracaoHoras');
-  if(chk) {
-    chk.checked = ehInstrumentoPorHoras(parent);
-    if(grp) grp.classList.toggle('hidden', !chk.checked);
+  // Passo 18 (Sabrina + Ana Paula, 02/09/2026): gatilho automático pela periodicidade do pai.
+  const porHoras = ehInstrumentoPorHoras(parent);
+  const grpHoras = document.getElementById('grpFracaoHoras');
+  const grpPct   = document.getElementById('grpNovaFracPct');
+  const txtGatilho = document.getElementById('txtGatilhoPeriodicidade');
+  if(txtGatilho) txtGatilho.textContent = (parent.periodicidade || '') + (porHoras ? ' · cálculo por Qtd × Valor da Hora' : ' · rateio direto em R$ ou %');
+  if(grpHoras) grpHoras.classList.toggle('hidden', !porHoras);
+  if(grpPct)   grpPct.classList.toggle('hidden', porHoras);
+  const inpVF = document.getElementById('inputNovaFracValorFracionado');
+  if(inpVF) {
+    inpVF.disabled = porHoras;
+    inpVF.style.background = porHoras ? '#f1f5f9' : '';
+    inpVF.style.cursor = porHoras ? 'not-allowed' : '';
+    inpVF.style.color = porHoras ? '#94a3b8' : '';
+    inpVF.placeholder = porHoras ? 'Calculado automaticamente' : 'R$ 0,00';
   }
 
   const modalSel = document.getElementById('modalSelectProjeto');
   if(modalSel) modalSel.classList.remove('hidden');
 }
 
-// Passo 16 (Sabrina + Ana Paula, 02/09/2026): abre/fecha grupo Qtd Horas + Valor Hora conforme checkbox
-function toggleFracaoPorHoras() {
-  const chk = document.getElementById('chkContratoPorHoras');
-  const grp = document.getElementById('grpFracaoHoras');
-  const marcado = !!(chk && chk.checked);
-  if(grp) grp.classList.toggle('hidden', !marcado);
-  if(!marcado) {
-    ['inputNovaFracQtdHoras','inputNovaFracValorHora'].forEach(id=>{
-      const el = document.getElementById(id); if(el) el.value = '';
-    });
-  }
-  atualizarValorFracionadoModalNovaFracao();
+// Passo 18 (Sabrina + Ana Paula, 02/09/2026): sincronia % ↔ R$ dentro do modal para instrumentos não-horas
+function sincronizarPctPelaFracaoModal() {
+  const parent = recursosAtivos.find(x => x.id === parentRecursoAtivoId);
+  if(!parent || ehInstrumentoPorHoras(parent)) return;
+  const val = parseCurrency(document.getElementById('inputNovaFracValorFracionado')?.value || 0);
+  const pct = parent.valorProporcional ? (val / parent.valorProporcional) * 100 : 0;
+  const elPct = document.getElementById('inputNovaFracPct');
+  if(elPct && document.activeElement !== elPct) elPct.value = _fmtPct(pct);
+}
+function sincronizarFracaoPeloPctModal() {
+  const parent = recursosAtivos.find(x => x.id === parentRecursoAtivoId);
+  if(!parent || ehInstrumentoPorHoras(parent)) return;
+  const pct = parseFloat((document.getElementById('inputNovaFracPct')?.value || '').replace(',', '.')) || 0;
+  const val = (pct / 100) * (Number(parent.valorProporcional) || 0);
+  const elVF = document.getElementById('inputNovaFracValorFracionado');
+  if(elVF && document.activeElement !== elVF) elVF.value = val > 0 ? formatarMoedaBR(val) : '';
 }
 
 function toggleNovoProjInput(val) {
@@ -1773,40 +1797,25 @@ function toggleNovoProjInput(val) {
 function fecharModalProjeto() {
   const modalSel = document.getElementById('modalSelectProjeto');
   if(modalSel) modalSel.classList.add('hidden');
-  ['inputNovoProjCode','inputNovaFracArea','inputNovaFracQtdHoras','inputNovaFracValorHora','inputNovaFracValorFracionado'].forEach(id=>{
+  ['inputNovoProjCode','inputNovaFracArea','inputNovaFracQtdHoras','inputNovaFracValorHora','inputNovaFracValorFracionado','inputNovaFracPct'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
-  const chk = document.getElementById('chkContratoPorHoras');
-  if(chk) chk.checked = false;
-  const grp = document.getElementById('grpFracaoHoras');
-  if(grp) grp.classList.add('hidden');
 }
 
-// Passo 14/16 (Sabrina + Ana Paula, 02/09/2026): calcula Valor Fracionado ao vivo no modal
-// Se checkbox "por horas" está marcado, o cálculo é Qtd × Valor Hora e trava o campo.
-// Se desmarcado, libera edição direta do Valor Fracionado.
+// Passo 18 (Sabrina + Ana Paula, 02/09/2026): calcula Valor Fracionado e % ao vivo
+// no modal — usado quando o instrumento pai é por horas.
 function atualizarValorFracionadoModalNovaFracao() {
-  const chk = document.getElementById('chkContratoPorHoras');
-  const elH = document.getElementById('inputNovaFracQtdHoras');
-  const elV = document.getElementById('inputNovaFracValorHora');
+  const parent = recursosAtivos.find(x => x.id === parentRecursoAtivoId);
+  if(!parent || !ehInstrumentoPorHoras(parent)) return;
+  const h = parseFloat((document.getElementById('inputNovaFracQtdHoras')?.value || '').replace(',', '.')) || 0;
+  const v = parseCurrency(document.getElementById('inputNovaFracValorHora')?.value || 0);
+  const total = h * v;
   const elR = document.getElementById('inputNovaFracValorFracionado');
-  if (!elR) return;
-  if (chk && chk.checked) {
-    const h = parseFloat(((elH && elH.value) || '').replace(',', '.')) || 0;
-    const v = parseCurrency(elV ? elV.value : 0);
-    const total = h * v;
-    elR.value = total > 0 ? formatarMoedaBR(total) : '';
-    elR.disabled = true;
-    elR.style.background = '#f1f5f9';
-    elR.style.cursor = 'not-allowed';
-    elR.title = 'Calculado: Qtd. Horas × Valor da Hora';
-  } else {
-    elR.disabled = false;
-    elR.style.background = '';
-    elR.style.cursor = '';
-    elR.title = 'Informe o Valor Fracionado direto (a % será calculada sobre o Valor Proporcional).';
-  }
+  if(elR) elR.value = total > 0 ? formatarMoedaBR(total) : '';
+  const pct = parent.valorProporcional ? (total / parent.valorProporcional) * 100 : 0;
+  const elPct = document.getElementById('inputNovaFracPct');
+  if(elPct) elPct.value = total > 0 ? _fmtPct(pct) : '';
 }
 
 function confirmarAdicionarFracao() {
@@ -1823,18 +1832,21 @@ function confirmarAdicionarFracao() {
     codigoProj = (inputCode && inputCode.value.trim()) ? inputCode.value.trim() : '3924';
   }
 
-  // Passo 14/16 (Sabrina + Ana Paula, 02/09/2026): coletar novos campos
-  const area      = (document.getElementById('inputNovaFracArea')?.value || '').trim();
-  const chkHoras  = !!document.getElementById('chkContratoPorHoras')?.checked;
-  let qtdHoras    = 0, valorHora = 0, val = 0;
-  if (chkHoras) {
+  // Passo 18 (Sabrina + Ana Paula, 02/09/2026): coleta depende da periodicidade do pai
+  const area = (document.getElementById('inputNovaFracArea')?.value || '').trim();
+  const porHoras = ehInstrumentoPorHoras(parent);
+  let qtdHoras = 0, valorHora = 0, val = 0, pct = 0;
+  if (porHoras) {
     qtdHoras  = parseFloat((document.getElementById('inputNovaFracQtdHoras')?.value || '').replace(',', '.')) || 0;
     valorHora = parseCurrency(document.getElementById('inputNovaFracValorHora')?.value || 0);
     val       = qtdHoras * valorHora;
   } else {
     val = parseCurrency(document.getElementById('inputNovaFracValorFracionado')?.value || 0);
+    pct = parseFloat((document.getElementById('inputNovaFracPct')?.value || '').replace(',', '.')) || 0;
+    // Se preencheu só a % e não o R$, calcula o R$ pela %
+    if (val === 0 && pct > 0 && parent.valorProporcional) val = (pct / 100) * parent.valorProporcional;
   }
-  const pct = parent.valorProporcional ? (val / parent.valorProporcional) * 100 : 0;
+  if (pct === 0) pct = parent.valorProporcional ? (val / parent.valorProporcional) * 100 : 0;
 
   if (!parent.projetosExpandidos) parent.projetosExpandidos = {};
   parent.projetosExpandidos[codigoProj] = true;
@@ -2044,14 +2056,15 @@ function executarAcaoConfirmada() {
   //  - Excluir = remocao definitiva + log central (registrarLogAcao) + log Master (window.logAuditoriaExclusoes)
   //  - Inativar = arquiva na tabela de Inativos (reversivel via Reativar) + carimbo imutavel.
   const motivoTxt = inputMotivo ? inputMotivo.value.trim() : '';
-  const _logMaster = (idRegistro) => {
+  // Passo 18 (Sabrina + Ana Paula, 02/09/2026): campos do log conforme especificação final
+  const _logMaster = (alvoDescricao) => {
     const now = new Date();
     const entry = {
       dataHora: now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}),
       operador: 'Guilherme Alves Braga (MASTER)',
-      idRegistro: idRegistro,
+      alvo: alvoDescricao,
       motivo: motivoTxt,
-      acao: 'EXCLUSAO_DEFINITIVA'
+      status: 'EXCLUIDO_COM_SUCESSO'
     };
     window.logAuditoriaExclusoes.push(entry);
     console.log('[SIGECOFI · Log Master de Exclusão]', entry);
@@ -2062,7 +2075,7 @@ function executarAcaoConfirmada() {
     recursosAtivos = recursosAtivos.filter(x => x.id !== pId);
     registrarLogAcao('EXCLUSAO_INSTRUMENTO', desc, motivoTxt);
     _logMaster(pId + ' · ' + desc);
-    mostrarToast("Exclusão definitiva confirmada. Ação registrada no log de auditoria (perfil Master).");
+    mostrarToast("Item excluído com sucesso por perfil Master.");
   } else if (tipo === 'excluir_fracao') {
     const p = recursosAtivos.find(x => x.id === pId);
     const f = p?.fracoes.find(x => x.id === fId);

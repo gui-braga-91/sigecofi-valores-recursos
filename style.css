@@ -480,6 +480,23 @@ table.resizable-table td .copy-group .input-inline {
   box-sizing: border-box;
 }
 
+/* Passo 18 (Sabrina + Ana Paula, 02/09/2026): min-widths por coluna no Nível 2
+   para impedir o colapso ao ativar a edição inline (lápis). */
+table.tabela-fracao-n2 { min-width: 1385px; table-layout: fixed; }
+table.tabela-fracao-n2 th.col-area,     table.tabela-fracao-n2 td.col-area     { min-width: 100px; }
+table.tabela-fracao-n2 th.col-uo,       table.tabela-fracao-n2 td.col-uo       { min-width: 85px;  }
+table.tabela-fracao-n2 th.col-recurso,  table.tabela-fracao-n2 td.col-recurso  { min-width: 180px; }
+table.tabela-fracao-n2 th.col-nad,      table.tabela-fracao-n2 td.col-nad      { min-width: 140px; }
+table.tabela-fracao-n2 th.col-periodo,  table.tabela-fracao-n2 td.col-periodo  { min-width: 190px; }
+table.tabela-fracao-n2 th.col-qtdh,     table.tabela-fracao-n2 td.col-qtdh     { min-width: 95px;  }
+table.tabela-fracao-n2 th.col-valh,     table.tabela-fracao-n2 td.col-valh     { min-width: 105px; }
+table.tabela-fracao-n2 th.col-pct,      table.tabela-fracao-n2 td.col-pct      { min-width: 75px;  }
+table.tabela-fracao-n2 th.col-valfrac,  table.tabela-fracao-n2 td.col-valfrac  { min-width: 125px; }
+table.tabela-fracao-n2 th.col-obs,      table.tabela-fracao-n2 td.col-obs      { min-width: 180px; }
+table.tabela-fracao-n2 th.col-acoes,    table.tabela-fracao-n2 td.col-acoes    { min-width: 110px; }
+/* Padding levemente reduzido em UO para não estourar o mínimo com o botão copiar */
+table.tabela-fracao-n2 td.col-uo { padding-right: 4px; }
+
 tr:hover { 
   background-color: #f8fafc; 
 }

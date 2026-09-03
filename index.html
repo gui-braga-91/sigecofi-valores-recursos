@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SIGECOFI - Módulo Contratos</title>
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link rel="stylesheet" href="style.css?v=21" />
 </head>
 <body>
 
@@ -666,13 +666,11 @@
           <option value="">Selecione a área atendida...</option>
         </select>
       </div>
-      <!-- Passo 16 (Sabrina + Ana Paula, 02/09/2026): gatilho condicional "Contrato medido por horas?" -->
-      <div class="form-group" style="background:#f0f9fc; border:1px solid #b6d4dc; padding:10px 12px; border-radius:6px;">
-        <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer; font-weight:700; color:#005F73;">
-          <input type="checkbox" id="chkContratoPorHoras" onchange="toggleFracaoPorHoras()" style="width:16px; height:16px; cursor:pointer;" />
-          Contrato medido por horas?
-        </label>
-        <div style="font-size:11px; color:#475569; margin-top:4px;">Marque para preencher <strong>Qtd. Horas × Valor da Hora</strong>. Se desmarcado, informe apenas <strong>Valor Fracionado</strong> (%).</div>
+      <!-- Passo 18 (Sabrina + Ana Paula, 02/09/2026): gatilho automático pela periodicidade
+           do instrumento pai. "Horas" -> mostra Qtd. Horas + Valor da Hora; qualquer outra
+           periodicidade -> mostra apenas Valor Fracionado + % (digitáveis). -->
+      <div class="form-group" id="lblGatilhoPeriodicidade" style="background:#f0f9fc; border:1px solid #b6d4dc; padding:8px 12px; border-radius:6px; font-size:11px; color:#005F73;">
+        Instrumento pai · <strong id="txtGatilhoPeriodicidade" style="color:#005F73;">—</strong>
       </div>
       <div id="grpFracaoHoras" class="hidden">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -686,9 +684,15 @@
           </div>
         </div>
       </div>
-      <div class="form-group">
-        <label id="lblNovaFracValorFracionado" style="color:#005F73; font-weight:700;">Valor Fracionado (R$):</label>
-        <input type="text" id="inputNovaFracValorFracionado" placeholder="R$ 0,00" class="input-text" oninput="applyCurrencyMask(this)" title="Valor Fracionado: informe direto ou marque 'Contrato medido por horas' para o cálculo automático." />
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px;">
+        <div class="form-group">
+          <label id="lblNovaFracValorFracionado" style="color:#005F73; font-weight:700;">Valor Fracionado (R$):</label>
+          <input type="text" id="inputNovaFracValorFracionado" placeholder="R$ 0,00" class="input-text" oninput="applyCurrencyMask(this); sincronizarPctPelaFracaoModal();" title="Valor Fracionado do projeto sobre o Valor Proporcional do instrumento pai." />
+        </div>
+        <div class="form-group" id="grpNovaFracPct">
+          <label style="color:#005F73; font-weight:700;">% da Cota:</label>
+          <input type="text" id="inputNovaFracPct" placeholder="Ex: 15,73" class="input-text" oninput="sincronizarFracaoPeloPctModal()" title="Percentual desta fração sobre o Valor Proporcional do instrumento pai." />
+        </div>
       </div>
       <div class="modal-actions">
         <button onclick="fecharModalProjeto()" class="btn-modal-sec">Cancelar</button>
@@ -887,6 +891,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=47"></script>
+  <script src="script.js?v=48"></script>
 </body>
 </html>
