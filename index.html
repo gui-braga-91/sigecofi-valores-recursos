@@ -407,10 +407,11 @@
       <div class="action-bar">
         <input type="text" id="inputSearch" oninput="renderizar()" placeholder="🔍 Pesquisa por valor de recurso ou instrumento..." class="search-box" />
         <!-- Ajuste B1 (Guilherme, 06/08/2026): switch de tratamento visual (portado do standalone) -->
-        <!-- Passo 15 (Sabrina + Ana Paula, 02/09/2026): opção B removida; visível apenas em Modo Visualizar -->
-        <div class="tratamento-switch modo-visualizar">
+        <!-- Passo 20 (Sabrina + Ana Paula, 03/09/2026): switch A/B/C restaurado — visível em ambos os modos -->
+        <div class="tratamento-switch">
           <span class="tratamento-label">TRATAMENTO</span>
           <button type="button" id="btnTratA" onclick="setTratamento('A')" class="btn-tratamento tratamento-ativo">A · Tabela</button>
+          <button type="button" id="btnTratB" onclick="setTratamento('B')" class="btn-tratamento">B · Barras de cota</button>
           <button type="button" id="btnTratC" onclick="setTratamento('C')" class="btn-tratamento">C · Lista plana</button>
         </div>
         <button id="btnNovoRec" onclick="abrirModalNovoRecurso()" class="btn-add-recurso modo-edit hidden">
@@ -954,6 +955,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=49"></script>
+  <script src="script.js?v=50"></script>
 </body>
 </html>

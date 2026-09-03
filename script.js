@@ -406,11 +406,10 @@ function copyGroupInput(id, val, oninputFunc, placeholder = "") {
 // ====================================================
 // Ajuste B1: alterna entre os 3 tratamentos visuais da aba Valores e Recursos
 function setTratamento(t) {
-  // Passo 15 (Sabrina + Ana Paula, 02/09/2026): opção B removida; se solicitada, cai para A
-  if(t === 'B') t = 'A';
-  if(t !== 'A' && t !== 'C') return;
+  // Passo 20 (Sabrina + Ana Paula, 03/09/2026): switch A/B/C restaurado; B usa renderFracoesModoB(item)
+  if(t !== 'A' && t !== 'B' && t !== 'C') return;
   tratamentoAtivo = t;
-  ['A','C'].forEach(x => {
+  ['A','B','C'].forEach(x => {
     const btn = document.getElementById('btnTrat' + x);
     if(btn) btn.classList.toggle('tratamento-ativo', x === t);
   });
@@ -489,10 +488,7 @@ function alternarModoGeral(modoAtual) {
   if(bNovo) bNovo.classList.toggle('hidden', !isEdit);
   if(bEmp) bEmp.classList.toggle('hidden', !isEdit);
 
-  // Passo 15 (Sabrina + Ana Paula, 02/09/2026): switch de tratamento so em Modo Visualizar
-  document.querySelectorAll('.tratamento-switch.modo-visualizar').forEach(el => el.classList.toggle('hidden', isEdit));
-  // Ao entrar em Modo Editar, força tratamento A (Tabela) para não trazer o modo C dentro do editor
-  if(isEdit && typeof setTratamento === 'function' && tratamentoAtivo !== 'A') setTratamento('A');
+  // Passo 20 (Sabrina + Ana Paula, 03/09/2026): switch A/B/C sempre visível — sem toggle por modo
 
   if (!isEdit) {
     recursosAtivos.forEach(r => {
