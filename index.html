@@ -407,11 +407,11 @@
       <div class="action-bar">
         <input type="text" id="inputSearch" oninput="renderizar()" placeholder="🔍 Pesquisa por valor de recurso ou instrumento..." class="search-box" />
         <!-- Ajuste B1 (Guilherme, 06/08/2026): switch de tratamento visual (portado do standalone) -->
-        <!-- Passo 21 (Sabrina + Ana Paula, 03/09/2026):
+        <!-- Passo 22.c (Sabrina + Ana Paula, 03/09/2026):
              - B removido (só Tabela e Lista plana)
              - Sem prefixos "A ·" / "C ·"
-             - Oculto por padrão (`.hidden`) para não gerar ruído no fluxo operacional -->
-        <div class="tratamento-switch hidden" id="wrapTratamento">
+             - VISÍVEL por padrão para permitir alternância entre as duas visualizações -->
+        <div class="tratamento-switch" id="wrapTratamento">
           <span class="tratamento-label">TRATAMENTO</span>
           <button type="button" id="btnTratA" onclick="setTratamento('A')" class="btn-tratamento tratamento-ativo">Tabela</button>
           <button type="button" id="btnTratC" onclick="setTratamento('C')" class="btn-tratamento">Lista plana</button>
@@ -957,6 +957,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=53"></script>
+  <script src="script.js?v=54"></script>
 </body>
 </html>
