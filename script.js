@@ -622,28 +622,68 @@ let recursosInativos = [
   }
 ];
 
+// Passo 16 (Sabrina + Ana Paula, 02/09/2026): Cálculo Reativo Triangular
+// Base: Valor Fracionado = Qtd. Horas × Valor da Hora
+// Cenário A: Horas + ValorHora  → calcula Val (e %)
+// Cenário B: Val   + ValorHora  → calcula Horas (e %)
+// Cenário C: Val   + Horas      → calcula ValorHora (e %)
+// Toda alteração cascatea: subtotal do projeto, horas totais do instrumento,
+// valor proporcional do instrumento (se por horas) e valor acumulado do contrato.
+function _fmtPct(pct) { return (pct % 1 === 0 ? pct : parseFloat(pct.toFixed(2))).toString().replace('.', ','); }
+function _fmtHoras(h) { return (Number(h)||0).toLocaleString('pt-BR', {maximumFractionDigits: 2}); }
+function _writeInput(id, valor) { const el = document.getElementById(id); if(el && document.activeElement !== el) el.value = valor; }
+function _cascataReativa(pId, pCode) {
+  atualizarTotaisProjetoDOM(pId, pCode);
+  _recalcHorasTotaisInstrumento(pId);
+  // Se instrumento é por horas, reconsolida Valor Proporcional e Valor Acumulado
+  const item = recursosAtivos.find(r => r.id === pId);
+  if(item && ehInstrumentoPorHoras(item)) {
+    const soma = (item.fracoes || []).reduce((s, x) => s + (Number(x.val) || 0), 0);
+    if(soma > 0) item.valorProporcional = soma;
+  }
+  const tot = recursosAtivos.reduce((s, r) => s + (Number(r.valorProporcional) || 0), 0);
+  const elTot = document.getElementById('txtTotalAcumulado');
+  if(elTot) elTot.textContent = formatarMoedaBR(tot);
+}
+function _syncFracaoTriangulo(f, campoEditado, p) {
+  // Regra: preserva o campo recém editado; recalcula os outros a partir dele + do outro campo com valor.
+  const horas = Number(f.qtdHoras) || 0;
+  const vHora = Number(f.valorHora) || 0;
+  const val   = Number(f.val) || 0;
+  if(campoEditado === 'horas') {
+    if(vHora > 0) f.val = horas * vHora;
+    else if(val > 0 && horas > 0) f.valorHora = val / horas;
+  } else if(campoEditado === 'valorHora') {
+    if(horas > 0) f.val = horas * vHora;
+    else if(val > 0 && vHora > 0) f.qtdHoras = val / vHora;
+  } else if(campoEditado === 'val') {
+    if(vHora > 0) f.qtdHoras = f.val / vHora;
+    else if(horas > 0) f.valorHora = f.val / horas;
+  }
+  // % sempre a partir do Val vs Valor Proporcional
+  f.pct = p.valorProporcional ? (f.val / p.valorProporcional) * 100 : 0;
+}
 function syncFractionFromPct(pId, fId, pCode, el) {
   const p = recursosAtivos.find(x => x.id === pId);
   const f = p.fracoes.find(x => x.id === fId);
-  let pctStr = el.value.replace(',', '.');
-  let pct = parseFloat(pctStr) || 0;
+  const pct = parseFloat((el.value || '').replace(',', '.')) || 0;
   f.pct = pct;
-  f.val = (pct / 100) * p.valorProporcional;
-  const inputVal = document.getElementById('f_val_' + fId);
-  if(inputVal) inputVal.value = formatarMoedaBR(f.val);
-  atualizarTotaisProjetoDOM(pId, pCode);
+  f.val = (pct / 100) * (p.valorProporcional || 0);
+  // Se tem valor/hora, ajusta horas para manter triangulo consistente
+  if(f.valorHora && f.valorHora > 0) f.qtdHoras = f.val / f.valorHora;
+  _writeInput('f_val_' + fId, formatarMoedaBR(f.val));
+  _writeInput('f_qtdh_' + fId, _fmtHoras(f.qtdHoras));
+  _cascataReativa(pId, pCode);
 }
-
 function syncFractionFromVal(pId, fId, pCode, el) {
   const p = recursosAtivos.find(x => x.id === pId);
   const f = p.fracoes.find(x => x.id === fId);
-  let val = parseCurrency(el.value);
-  f.val = val;
-  f.pct = p.valorProporcional ? (val / p.valorProporcional) * 100 : 0;
-  let pctFormatado = f.pct % 1 === 0 ? f.pct : parseFloat(f.pct.toFixed(2));
-  const inputPct = document.getElementById('f_pct_' + fId);
-  if(inputPct) inputPct.value = pctFormatado.toString().replace('.', ',');
-  atualizarTotaisProjetoDOM(pId, pCode);
+  f.val = parseCurrency(el.value);
+  _syncFracaoTriangulo(f, 'val', p);
+  _writeInput('f_qtdh_' + fId, _fmtHoras(f.qtdHoras));
+  _writeInput('f_valh_' + fId, f.valorHora ? formatarMoedaBR(f.valorHora) : '');
+  _writeInput('f_pct_'  + fId, _fmtPct(f.pct));
+  _cascataReativa(pId, pCode);
 }
 
 // Passo 14 (Guilherme, 01/09/2026): handlers dos novos campos Qtd Horas / Valor Hora / Área
@@ -656,34 +696,22 @@ function _recalcHorasTotaisInstrumento(pId) {
 function syncFractionFromHoras(pId, fId, pCode, el) {
   const p = recursosAtivos.find(x => x.id === pId);
   const f = p.fracoes.find(x => x.id === fId);
-  const horas = parseFloat((el.value || '').replace(',', '.')) || 0;
-  f.qtdHoras = horas;
-  // Se tem valor/hora, recalcula o Valor Fracionado
-  if(f.valorHora) {
-    f.val = horas * f.valorHora;
-    f.pct = p.valorProporcional ? (f.val / p.valorProporcional) * 100 : 0;
-    const inputVal = document.getElementById('f_val_' + fId);
-    if(inputVal) inputVal.value = formatarMoedaBR(f.val);
-    const inputPct = document.getElementById('f_pct_' + fId);
-    if(inputPct) inputPct.value = (f.pct % 1 === 0 ? f.pct : parseFloat(f.pct.toFixed(2))).toString().replace('.', ',');
-  }
-  _recalcHorasTotaisInstrumento(pId);
-  atualizarTotaisProjetoDOM(pId, pCode);
+  f.qtdHoras = parseFloat((el.value || '').replace(',', '.')) || 0;
+  _syncFracaoTriangulo(f, 'horas', p);
+  _writeInput('f_val_'  + fId, formatarMoedaBR(f.val));
+  _writeInput('f_valh_' + fId, f.valorHora ? formatarMoedaBR(f.valorHora) : '');
+  _writeInput('f_pct_'  + fId, _fmtPct(f.pct));
+  _cascataReativa(pId, pCode);
 }
 function syncFractionFromValorHora(pId, fId, pCode, el) {
   const p = recursosAtivos.find(x => x.id === pId);
   const f = p.fracoes.find(x => x.id === fId);
-  const valorHora = parseCurrency(el.value);
-  f.valorHora = valorHora;
-  if(f.qtdHoras) {
-    f.val = f.qtdHoras * valorHora;
-    f.pct = p.valorProporcional ? (f.val / p.valorProporcional) * 100 : 0;
-    const inputVal = document.getElementById('f_val_' + fId);
-    if(inputVal) inputVal.value = formatarMoedaBR(f.val);
-    const inputPct = document.getElementById('f_pct_' + fId);
-    if(inputPct) inputPct.value = (f.pct % 1 === 0 ? f.pct : parseFloat(f.pct.toFixed(2))).toString().replace('.', ',');
-  }
-  atualizarTotaisProjetoDOM(pId, pCode);
+  f.valorHora = parseCurrency(el.value);
+  _syncFracaoTriangulo(f, 'valorHora', p);
+  _writeInput('f_val_'  + fId, formatarMoedaBR(f.val));
+  _writeInput('f_qtdh_' + fId, _fmtHoras(f.qtdHoras));
+  _writeInput('f_pct_'  + fId, _fmtPct(f.pct));
+  _cascataReativa(pId, pCode);
 }
 function atualizarFracaoCampo(pId, fId, campo, valor) {
   const p = recursosAtivos.find(x => x.id === pId);
@@ -1711,8 +1739,30 @@ function abrirModalProjeto(parentId) {
     selectArea.innerHTML = '<option value="">Selecione a área...</option>' + grupoUsadas + grupoOutras;
   }
 
+  // Passo 16: gatilho "Contrato medido por horas?" já marcado quando pai é por horas
+  const chk = document.getElementById('chkContratoPorHoras');
+  const grp = document.getElementById('grpFracaoHoras');
+  if(chk) {
+    chk.checked = ehInstrumentoPorHoras(parent);
+    if(grp) grp.classList.toggle('hidden', !chk.checked);
+  }
+
   const modalSel = document.getElementById('modalSelectProjeto');
   if(modalSel) modalSel.classList.remove('hidden');
+}
+
+// Passo 16 (Sabrina + Ana Paula, 02/09/2026): abre/fecha grupo Qtd Horas + Valor Hora conforme checkbox
+function toggleFracaoPorHoras() {
+  const chk = document.getElementById('chkContratoPorHoras');
+  const grp = document.getElementById('grpFracaoHoras');
+  const marcado = !!(chk && chk.checked);
+  if(grp) grp.classList.toggle('hidden', !marcado);
+  if(!marcado) {
+    ['inputNovaFracQtdHoras','inputNovaFracValorHora'].forEach(id=>{
+      const el = document.getElementById(id); if(el) el.value = '';
+    });
+  }
+  atualizarValorFracionadoModalNovaFracao();
 }
 
 function toggleNovoProjInput(val) {
@@ -1723,26 +1773,40 @@ function toggleNovoProjInput(val) {
 function fecharModalProjeto() {
   const modalSel = document.getElementById('modalSelectProjeto');
   if(modalSel) modalSel.classList.add('hidden');
-  ['inputNovoProjCode','inputNovaFracArea','inputNovaFracQtdHoras','inputNovaFracValorHora'].forEach(id=>{
+  ['inputNovoProjCode','inputNovaFracArea','inputNovaFracQtdHoras','inputNovaFracValorHora','inputNovaFracValorFracionado'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value = '';
   });
-  const elVF = document.getElementById('inputNovaFracValorFracionado');
-  if(elVF) elVF.value = 'Calculado automaticamente';
+  const chk = document.getElementById('chkContratoPorHoras');
+  if(chk) chk.checked = false;
+  const grp = document.getElementById('grpFracaoHoras');
+  if(grp) grp.classList.add('hidden');
 }
 
-// Passo 14 (Guilherme, 01/09/2026): calcula Valor Fracionado ao vivo no modal de nova fração
+// Passo 14/16 (Sabrina + Ana Paula, 02/09/2026): calcula Valor Fracionado ao vivo no modal
+// Se checkbox "por horas" está marcado, o cálculo é Qtd × Valor Hora e trava o campo.
+// Se desmarcado, libera edição direta do Valor Fracionado.
 function atualizarValorFracionadoModalNovaFracao() {
+  const chk = document.getElementById('chkContratoPorHoras');
   const elH = document.getElementById('inputNovaFracQtdHoras');
   const elV = document.getElementById('inputNovaFracValorHora');
   const elR = document.getElementById('inputNovaFracValorFracionado');
   if (!elR) return;
-  const h = Number(elH && elH.value) || 0;
-  const v = parseCurrency(elV ? elV.value : 0);
-  const total = h * v;
-  elR.value = total > 0 ? formatarMoedaBR(total) : 'Calculado automaticamente';
-  elR.style.color = total > 0 ? '#0f172a' : '#94a3b8';
-  elR.style.fontStyle = total > 0 ? 'normal' : 'italic';
+  if (chk && chk.checked) {
+    const h = parseFloat(((elH && elH.value) || '').replace(',', '.')) || 0;
+    const v = parseCurrency(elV ? elV.value : 0);
+    const total = h * v;
+    elR.value = total > 0 ? formatarMoedaBR(total) : '';
+    elR.disabled = true;
+    elR.style.background = '#f1f5f9';
+    elR.style.cursor = 'not-allowed';
+    elR.title = 'Calculado: Qtd. Horas × Valor da Hora';
+  } else {
+    elR.disabled = false;
+    elR.style.background = '';
+    elR.style.cursor = '';
+    elR.title = 'Informe o Valor Fracionado direto (a % será calculada sobre o Valor Proporcional).';
+  }
 }
 
 function confirmarAdicionarFracao() {
@@ -1759,11 +1823,18 @@ function confirmarAdicionarFracao() {
     codigoProj = (inputCode && inputCode.value.trim()) ? inputCode.value.trim() : '3924';
   }
 
-  // Passo 14: coletar novos campos (Área / Qtd Horas / Valor Hora)
+  // Passo 14/16 (Sabrina + Ana Paula, 02/09/2026): coletar novos campos
   const area      = (document.getElementById('inputNovaFracArea')?.value || '').trim();
-  const qtdHoras  = Number(document.getElementById('inputNovaFracQtdHoras')?.value) || 0;
-  const valorHora = parseCurrency(document.getElementById('inputNovaFracValorHora')?.value || 0);
-  const val       = qtdHoras * valorHora;
+  const chkHoras  = !!document.getElementById('chkContratoPorHoras')?.checked;
+  let qtdHoras    = 0, valorHora = 0, val = 0;
+  if (chkHoras) {
+    qtdHoras  = parseFloat((document.getElementById('inputNovaFracQtdHoras')?.value || '').replace(',', '.')) || 0;
+    valorHora = parseCurrency(document.getElementById('inputNovaFracValorHora')?.value || 0);
+    val       = qtdHoras * valorHora;
+  } else {
+    val = parseCurrency(document.getElementById('inputNovaFracValorFracionado')?.value || 0);
+  }
+  const pct = parent.valorProporcional ? (val / parent.valorProporcional) * 100 : 0;
 
   if (!parent.projetosExpandidos) parent.projetosExpandidos = {};
   parent.projetosExpandidos[codigoProj] = true;
@@ -1778,7 +1849,7 @@ function confirmarAdicionarFracao() {
     periodo: '',
     qtdHoras: qtdHoras,
     valorHora: valorHora,
-    pct: 0,
+    pct: pct,
     val: val,
     obs: '',
     editando: true
@@ -1894,23 +1965,31 @@ function abrirConfirmacao(tipo, pId, fId = null) {
   const titulo = document.getElementById('modalConfirmTitle');
   const desc = document.getElementById('modalConfirmDesc');
   const auditSection = document.getElementById('modalAuditSection');
+  const senhaSection = document.getElementById('modalSenhaSection');
   const btnConfirmar = document.getElementById('btnConfirmarAcao');
-
   const inputMotivo = document.getElementById('inputMotivo');
+  const inputSenha  = document.getElementById('inputSenhaMaster');
+  const senhaErro   = document.getElementById('senhaErro');
   if(inputMotivo) inputMotivo.value = '';
-  
+  if(inputSenha)  inputSenha.value  = '';
+  if(senhaErro)   senhaErro.classList.add('hidden');
+
   const now = new Date();
   const inputAuditData = document.getElementById('inputAuditData');
   if(inputAuditData) inputAuditData.value = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
 
+  // Passo 16 (Sabrina + Ana Paula, 02/09/2026): senha Master exigida apenas na EXCLUSÃO DEFINITIVA
+  if(senhaSection) senhaSection.classList.add('hidden');
+
   if (tipo.includes('excluir')) {
-    if(titulo) titulo.innerHTML = '🗑️ Confirmar Exclusão';
-    if(desc) desc.innerHTML = 'Você deseja realmente excluir esta informação? Esta ação ficará registrada.';
+    if(titulo) titulo.innerHTML = '🗑️ Exclusão Definitiva · Perfil Master';
+    if(desc) desc.innerHTML = '<strong>Ação irreversível.</strong> O registro será removido permanentemente da base e ficará gravado no log de auditoria de exclusões. Prossiga apenas se realmente autorizado.';
     if(auditSection) auditSection.classList.remove('hidden');
-    if(btnConfirmar) { btnConfirmar.className = 'btn-modal-danger'; btnConfirmar.innerHTML = 'Excluir'; }
+    if(senhaSection) senhaSection.classList.remove('hidden');
+    if(btnConfirmar) { btnConfirmar.className = 'btn-modal-danger'; btnConfirmar.innerHTML = 'Confirmar Exclusão Definitiva'; }
   } else if (tipo === 'inativar_pai') {
     if(titulo) titulo.innerHTML = '⚠️ Confirmar Inativação';
-    if(desc) desc.innerHTML = 'Você deseja inativar este recurso? Ele será movido para o histórico de inativos.';
+    if(desc) desc.innerHTML = 'Você deseja inativar este recurso? Ele será movido para o histórico de inativos e poderá ser reativado depois.';
     if(auditSection) auditSection.classList.remove('hidden');
     if(btnConfirmar) { btnConfirmar.className = 'btn-modal-danger'; btnConfirmar.innerHTML = 'Inativar'; }
   } else if (tipo.includes('salvar')) {
@@ -1924,6 +2003,10 @@ function abrirConfirmacao(tipo, pId, fId = null) {
   if(modalConf) modalConf.classList.remove('hidden');
 }
 
+// Passo 16: senhas Master mockadas do protótipo (o backend real usará hash + política de segurança)
+const SENHAS_MASTER = ['admin123', 'master@2026'];
+window.logAuditoriaExclusoes = window.logAuditoriaExclusoes || [];
+
 function fecharModalConfirmacao() {
   const modalConf = document.getElementById('modalConfirmacao');
   if(modalConf) modalConf.classList.add('hidden');
@@ -1934,31 +2017,60 @@ function executarAcaoConfirmada() {
   if (!acaoPendente) return;
   const { tipo, pId, fId } = acaoPendente;
   const auditSection = document.getElementById('modalAuditSection');
+  const senhaSection = document.getElementById('modalSenhaSection');
   const inputMotivo = document.getElementById('inputMotivo');
+  const inputSenha  = document.getElementById('inputSenhaMaster');
+  const senhaErro   = document.getElementById('senhaErro');
 
   if (auditSection && !auditSection.classList.contains('hidden') && inputMotivo && inputMotivo.value.trim() === '') {
     alert('Por favor, preencha o motivo para prosseguir (obrigatório para auditoria).');
     return;
   }
 
+  // Passo 16 (Sabrina + Ana Paula, 02/09/2026): senha Master exigida na EXCLUSÃO DEFINITIVA
+  const isExclusao = tipo && tipo.indexOf('excluir') === 0;
+  if (isExclusao && senhaSection && !senhaSection.classList.contains('hidden')) {
+    const senha = inputSenha ? inputSenha.value : '';
+    if (!SENHAS_MASTER.includes(senha)) {
+      if(senhaErro) senhaErro.classList.remove('hidden');
+      if(inputSenha) { inputSenha.value = ''; inputSenha.focus(); }
+      return;
+    }
+    if(senhaErro) senhaErro.classList.add('hidden');
+  }
+
   // AÇÕES DA ABA 1 (VALORES E RECURSOS)
-  // Passo 15 (Sabrina + Ana Paula, 02/09/2026):
-  //  - Excluir = remocao definitiva (nao vai para historico) + log obrigatorio com motivo.
+  // Passo 15/16 (Sabrina + Ana Paula, 02/09/2026):
+  //  - Excluir = remocao definitiva + log central (registrarLogAcao) + log Master (window.logAuditoriaExclusoes)
   //  - Inativar = arquiva na tabela de Inativos (reversivel via Reativar) + carimbo imutavel.
   const motivoTxt = inputMotivo ? inputMotivo.value.trim() : '';
+  const _logMaster = (idRegistro) => {
+    const now = new Date();
+    const entry = {
+      dataHora: now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}),
+      operador: 'Guilherme Alves Braga (MASTER)',
+      idRegistro: idRegistro,
+      motivo: motivoTxt,
+      acao: 'EXCLUSAO_DEFINITIVA'
+    };
+    window.logAuditoriaExclusoes.push(entry);
+    console.log('[SIGECOFI · Log Master de Exclusão]', entry);
+  };
   if (tipo === 'excluir_pai') {
     const alvo = recursosAtivos.find(x => x.id === pId);
     const desc = alvo ? `${alvo.instrumento || ''} nº ${alvo.numero || ''} · ${formatarMoedaBR(alvo.valorAtualizado)}` : pId;
     recursosAtivos = recursosAtivos.filter(x => x.id !== pId);
     registrarLogAcao('EXCLUSAO_INSTRUMENTO', desc, motivoTxt);
-    mostrarToast("Recurso excluído definitivamente. Ação registrada no log de auditoria.");
+    _logMaster(pId + ' · ' + desc);
+    mostrarToast("Exclusão definitiva confirmada. Ação registrada no log de auditoria (perfil Master).");
   } else if (tipo === 'excluir_fracao') {
     const p = recursosAtivos.find(x => x.id === pId);
     const f = p?.fracoes.find(x => x.id === fId);
     const desc = (p && f) ? `Fração ${f.area || '-'} / Projeto ${f.projeto || '-'} do instrumento ${p.instrumento} nº ${p.numero}` : `${pId}/${fId}`;
     if (p) p.fracoes = p.fracoes.filter(x => x.id !== fId);
     registrarLogAcao('EXCLUSAO_FRACAO', desc, motivoTxt);
-    mostrarToast("Fração excluída definitivamente. Ação registrada no log de auditoria.");
+    _logMaster(fId + ' · ' + desc);
+    mostrarToast("Fração excluída definitivamente. Ação registrada no log Master.");
   } else if (tipo === 'inativar_pai') {
     const idx = recursosAtivos.findIndex(x => x.id === pId);
     if (idx !== -1) {
@@ -1980,12 +2092,20 @@ function executarAcaoConfirmada() {
   
   // AÇÕES DA ABA 2 (EXECUÇÃO FINANCEIRA)
   else if (tipo === 'excluir_empenho') {
+    const alvo = empenhosAtivos.find(x => x.id === pId);
+    const desc = alvo ? `Empenho ${alvo.numeroEmpenho} · ${alvo.area}` : pId;
     empenhosAtivos = empenhosAtivos.filter(x => x.id !== pId);
-    mostrarToast("Empenho excluído com sucesso.");
+    registrarLogAcao('EXCLUSAO_EMPENHO', desc, motivoTxt);
+    _logMaster(pId + ' · ' + desc);
+    mostrarToast("Empenho excluído. Ação registrada no log Master.");
   } else if (tipo === 'excluir_parcela') {
     const emp = empenhosAtivos.find(x => x.id === pId);
+    const par = emp?.parcelas.find(x => x.id === fId);
+    const desc = par ? `Parcela ${par.comp} · ${formatarMoedaBR(par.valorParcela)} do empenho ${emp.numeroEmpenho}` : `${pId}/${fId}`;
     if (emp) emp.parcelas = emp.parcelas.filter(x => x.id !== fId);
-    mostrarToast("Parcela excluída com sucesso.");
+    registrarLogAcao('EXCLUSAO_PARCELA', desc, motivoTxt);
+    _logMaster(fId + ' · ' + desc);
+    mostrarToast("Parcela excluída. Ação registrada no log Master.");
   } else if (tipo === 'salvar_empenho') {
     salvarEdicaoEmpenho(pId);
   } else if (tipo === 'salvar_parcela') {

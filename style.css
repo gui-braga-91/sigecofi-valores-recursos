@@ -473,20 +473,22 @@ tr:hover {
   position: absolute;
   top: 0;
   right: 0;
-  width: 4px;
+  width: 6px;
   height: 100%;
   cursor: col-resize;
   user-select: none;
   background-color: rgba(255, 255, 255, 0.35);
-  transition: background-color 0.2s, width 0.2s;
-  z-index: 5;
+  transition: background-color 0.2s;
+  z-index: 20;
+  pointer-events: auto !important; /* Passo 16: garante drag em ambos modos, mesmo com pointer-events:none no pai */
 }
 
-.resizer:hover, .resizer.resizing { 
-  background-color: #f59e0b; 
-  width: 6px; 
-  z-index: 10; 
+.resizer:hover, .resizer.resizing {
+  background-color: #f59e0b;
+  z-index: 30;
 }
+/* Passo 16 (Sabrina + Ana Paula, 02/09/2026): mesmo em Modo Visualizar o resizer aceita mouse */
+body.modo-app-visualizar .resizable-table th .resizer { pointer-events: auto !important; cursor: col-resize; }
 
 .sub-container { 
   background: #f0f7f9; 
@@ -646,18 +648,22 @@ tr:hover {
   outline: none; 
 }
 
-.copy-group .btn-copy-addon { 
-  background: #f8fafc; 
-  border: none; 
-  border-left: 1px solid #cbd5e1; 
-  padding: 0 6px; 
-  cursor: pointer; 
-  color: #005F73; 
-  border-radius: 0 3px 3px 0; 
-  transition: background 0.2s, color 0.2s; 
+/* Passo 16 (Sabrina + Ana Paula, 02/09/2026): botão de cópia integrado — apenas o ícone SVG,
+   sem caixa cinza pesada. Fica discreto ao lado do texto, e escurece no hover. */
+.copy-group .btn-copy-addon {
+  background: transparent;
+  border: none;
+  padding: 0 4px 0 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  border-radius: 3px;
+  transition: color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
-
-.copy-group .btn-copy-addon:hover { background: #e2e8f0; }
+.copy-group .btn-copy-addon:hover { color: #005F73; background: transparent; }
+.copy-group .btn-copy-addon svg { display: block; }
 
 .input-plain { 
   border: 1px solid #cbd5e1; 
@@ -688,9 +694,10 @@ tr:hover {
   transition: color 0.2s; 
 }
 
-.btn-copy-view:hover { 
-  color: #005F73; 
-  background: #e2e8f0; 
+/* Passo 16: ícone copiar fica só com mudança de cor no hover — sem fundo pesado */
+.btn-copy-view:hover {
+  color: #005F73;
+  background: transparent;
 }
 
 /* CHECKBOX INTERATIVO PARA SALDO NÃO EXECUTÁVEL */
@@ -925,12 +932,16 @@ tr:hover {
   gap: 6px;
   justify-content: flex-end;
 }
+/* Passo 16 (Sabrina + Ana Paula, 02/09/2026): padronização visual das datas do cabeçalho.
+   Mesmo encapsulamento em Editar e Visualizar. Labels 700 #004856 à direita, valor 700 #005F73 12px,
+   caixa com fundo suave #f0f9fc + borda #b6d4dc + ícone calendário integrado à direita. */
 .th-data-label {
-  font-size: 11px;
-  color: #005F73;
-  min-width: 55px;
+  font-size: 12px;
+  color: #004856;
+  min-width: 58px;
   text-align: right;
-  font-weight: bold;
+  font-weight: 700;
+  letter-spacing: 0.2px;
 }
 .th-data-wrap {
   position: relative;
@@ -938,26 +949,31 @@ tr:hover {
 }
 .th-data-input {
   width: 130px;
-  padding: 4px 26px 4px 8px;
-  font-size: 11px;
+  padding: 5px 28px 5px 10px;
+  font-size: 12px;
   border: 1px solid #b6d4dc;
   background: #f0f9fc;
-  border-radius: 4px;
+  border-radius: 5px;
   color: #005F73;
+  font-weight: 700;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
+.th-data-input:hover { border-color: #7db4c1; }
 .th-data-input:focus {
   outline: none; border-color: #005F73;
-  box-shadow: 0 0 0 2px rgba(0, 95, 115, 0.15);
+  box-shadow: 0 0 0 2px rgba(0, 95, 115, 0.18);
 }
 .th-cal-icon {
   position: absolute;
-  right: 6px;
+  right: 7px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 12px;
-  pointer-events: none;
-  opacity: 0.55;
+  font-size: 13px;
+  opacity: 0.72;
+  color: #005F73;
+  line-height: 1;
 }
+.th-cal-icon:hover { opacity: 1; }
 @media (max-width: 900px) {
   .top-header-v2 { grid-template-columns: 1fr; }
   .th-right { align-items: stretch; }
@@ -983,8 +999,7 @@ body.modo-app-visualizar .dg-panel textarea.input-text { resize: none; }
 
 /* Passo 10 (Guilherme, 22/08/2026 — cards Ana Paula): Cabeçalho em Modo Visualizar
    deixa Nº/Apelido/Datas como TEXTO NEGRITO (sem caixa/borda visível), como no SIGECOFI real. */
-body.modo-app-visualizar .top-header-v2 input.th-input,
-body.modo-app-visualizar .top-header-v2 input.th-data-input {
+body.modo-app-visualizar .top-header-v2 input.th-input {
   border: none !important;
   background: transparent !important;
   padding: 0 !important;
@@ -994,20 +1009,24 @@ body.modo-app-visualizar .top-header-v2 input.th-data-input {
   height: auto;
   min-height: 1.5em;
 }
-body.modo-app-visualizar .top-header-v2 .th-data-input {
+/* Passo 16 (Sabrina + Ana Paula, 02/09/2026): datas MANTÊM caixa e realce em Visualizar,
+   apenas com edição travada, evitando o efeito "texto solto". */
+body.modo-app-visualizar .top-header-v2 input.th-data-input {
+  background: #f0f9fc !important;
+  border: 1px solid #b6d4dc !important;
   color: #005F73 !important;
-  font-size: 13px !important;
+  padding: 5px 28px 5px 10px !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  cursor: default;
+  pointer-events: none;
+  box-shadow: none !important;
+  height: auto;
 }
 body.modo-app-visualizar .top-header-v2 .th-data-label {
-  color: #005F73 !important;
-  font-weight: bold !important;
+  color: #004856 !important;
+  font-weight: 700 !important;
   font-size: 12px !important;
-}
-/* Realce visual das datas em ambos os modos (Card melhoria UX Ana Paula) */
-.top-header-v2 .th-data-label { color: #005F73; font-weight: bold; }
-.top-header-v2 .th-data-input {
-  color: #005F73;
-  font-weight: 600;
 }
 /* Passo 5 (Guilherme, 20/08/2026): trava reforçada — checkboxes, radios, e QUALQUER input em Visualizar */
 body.modo-app-visualizar .dg-panel input[type="checkbox"],

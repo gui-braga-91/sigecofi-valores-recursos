@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SIGECOFI - Módulo Contratos</title>
-  <link rel="stylesheet" href="style.css?v=18" />
+  <link rel="stylesheet" href="style.css?v=19" />
 </head>
 <body>
 
@@ -528,6 +528,17 @@
         </div>
       </div>
 
+      <!-- Passo 16 (Sabrina + Ana Paula, 02/09/2026): fluxo seguro em 2 etapas para EXCLUSÃO DEFINITIVA -->
+      <div id="modalSenhaSection" class="audit-box hidden" style="margin-top:12px; background:#fef2f2; border-color:#fecaca;">
+        <div class="audit-title" style="color:#b91c1c;">Etapa 2 · Autenticação de Administrador (Master)</div>
+        <div class="form-group" style="margin:0;">
+          <label for="inputSenhaMaster" style="color:#7f1d1d; font-weight:700;">Confirme sua senha de Administrador:</label>
+          <input type="password" id="inputSenhaMaster" class="input-text" placeholder="Digite a senha Master" autocomplete="off" />
+          <div id="senhaErro" class="hidden" style="color:#b91c1c; font-size:11px; margin-top:6px; font-weight:600;">⚠️ Senha incorreta. Ação não autorizada.</div>
+          <div style="color:#7f1d1d; font-size:11px; margin-top:6px; font-style:italic;">A senha é validada localmente para fins de auditoria antes de a exclusão definitiva ser efetivada.</div>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button onclick="fecharModalConfirmacao()" class="btn-modal-sec">Não</button>
         <button id="btnConfirmarAcao" onclick="executarAcaoConfirmada()" class="btn-modal-pri">Sim</button>
@@ -655,19 +666,29 @@
           <option value="">Selecione a área atendida...</option>
         </select>
       </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <div class="form-group">
-          <label for="inputNovaFracQtdHoras">Qtd. Horas:</label>
-          <input type="number" id="inputNovaFracQtdHoras" min="0" step="0.01" placeholder="Ex: 120" class="input-text" oninput="atualizarValorFracionadoModalNovaFracao()" />
-        </div>
-        <div class="form-group">
-          <label for="inputNovaFracValorHora">Valor da Hora (R$):</label>
-          <input type="text" id="inputNovaFracValorHora" placeholder="Ex: R$ 150,00" class="input-text" oninput="applyCurrencyMask(this); atualizarValorFracionadoModalNovaFracao();" />
+      <!-- Passo 16 (Sabrina + Ana Paula, 02/09/2026): gatilho condicional "Contrato medido por horas?" -->
+      <div class="form-group" style="background:#f0f9fc; border:1px solid #b6d4dc; padding:10px 12px; border-radius:6px;">
+        <label style="display:flex; align-items:center; gap:8px; margin:0; cursor:pointer; font-weight:700; color:#005F73;">
+          <input type="checkbox" id="chkContratoPorHoras" onchange="toggleFracaoPorHoras()" style="width:16px; height:16px; cursor:pointer;" />
+          Contrato medido por horas?
+        </label>
+        <div style="font-size:11px; color:#475569; margin-top:4px;">Marque para preencher <strong>Qtd. Horas × Valor da Hora</strong>. Se desmarcado, informe apenas <strong>Valor Fracionado</strong> (%).</div>
+      </div>
+      <div id="grpFracaoHoras" class="hidden">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="inputNovaFracQtdHoras">Qtd. Horas:</label>
+            <input type="text" id="inputNovaFracQtdHoras" placeholder="Ex: 120 (aceita 2,5)" class="input-text" oninput="atualizarValorFracionadoModalNovaFracao()" />
+          </div>
+          <div class="form-group">
+            <label for="inputNovaFracValorHora">Valor da Hora (R$):</label>
+            <input type="text" id="inputNovaFracValorHora" placeholder="Ex: R$ 150,00" class="input-text" oninput="applyCurrencyMask(this); atualizarValorFracionadoModalNovaFracao();" />
+          </div>
         </div>
       </div>
       <div class="form-group">
-        <label style="color:#94a3b8;">Valor Fracionado (R$):</label>
-        <input type="text" id="inputNovaFracValorFracionado" value="Calculado automaticamente" disabled class="input-text" style="background:#f1f5f9; color:#94a3b8; font-style:italic; cursor:not-allowed;" title="Qtd. Horas × Valor da Hora" />
+        <label id="lblNovaFracValorFracionado" style="color:#005F73; font-weight:700;">Valor Fracionado (R$):</label>
+        <input type="text" id="inputNovaFracValorFracionado" placeholder="R$ 0,00" class="input-text" oninput="applyCurrencyMask(this)" title="Valor Fracionado: informe direto ou marque 'Contrato medido por horas' para o cálculo automático." />
       </div>
       <div class="modal-actions">
         <button onclick="fecharModalProjeto()" class="btn-modal-sec">Cancelar</button>
@@ -702,6 +723,7 @@
             <option value="Trimestral">Trimestral</option>
             <option value="Semestral">Semestral</option>
             <option value="Anual">Anual</option>
+            <option value="Horas">Horas</option>
             <option value="Unitário">Unitário</option>
             <option value="Escopo">Escopo</option>
             <option value="SEM CUSTOS">SEM CUSTOS</option>
@@ -857,6 +879,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=45"></script>
+  <script src="script.js?v=46"></script>
 </body>
 </html>
