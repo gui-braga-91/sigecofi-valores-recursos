@@ -453,13 +453,31 @@ th:last-child {
   border-right: none; 
 }
 
-td { 
-  padding: 6px 8px; 
-  border-bottom: 1px solid #e2e8f0; 
-  font-size: 11px; 
-  vertical-align: middle; 
-  overflow: hidden; 
-  text-overflow: ellipsis; 
+td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 11px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Passo 17 (Sabrina + Ana Paula, 02/09/2026): bug de colapso na edição inline.
+   Todos os inputs/selects dentro de células respeitam a largura da coluna
+   (fixed layout) e não empurram/achatam as vizinhas. */
+table.resizable-table td .input-plain,
+table.resizable-table td .copy-group,
+table.resizable-table td select.input-plain,
+table.resizable-table td input.input-plain {
+  width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+table.resizable-table td .copy-group .input-inline {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 tr:hover { 
@@ -1157,6 +1175,17 @@ body.modo-app-visualizar .date-input-wrap .th-cal-icon { display: none; }
   transition: background 0.15s;
 }
 .input-action-btn:hover { background: #e2e8f0; color: #005F73; }
+
+/* Passo 17 (Sabrina + Ana Paula, 02/09/2026): variante minimalista do botão de cópia
+   (folhas duplas vazadas) — sem fundo cinza pesado, integrado fluidamente ao input. */
+.input-action-btn.btn-copy-view {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 4px 6px;
+  height: 30px;
+}
+.input-action-btn.btn-copy-view:hover { background: transparent; color: #005F73; }
 /* Botão de "Buscar processo" some no Modo Visualizar (ação de edição) */
 body.modo-app-visualizar .input-action-btn[title="Buscar processo"] { display: none; }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SIGECOFI - Módulo Contratos</title>
-  <link rel="stylesheet" href="style.css?v=19" />
+  <link rel="stylesheet" href="style.css?v=20" />
 </head>
 <body>
 
@@ -117,21 +117,21 @@
               <div class="input-with-actions">
                 <input type="text" id="dgProcesso" class="input-text input-blue" />
                 <button type="button" class="input-action-btn" onclick="buscarProcesso()" title="Buscar processo">🔍</button>
-                <button type="button" class="input-action-btn" onclick="copiarCampo('dgProcesso')" title="Copiar">📋</button>
+                <button type="button" class="input-action-btn btn-copy-view" onclick="copiarCampo('dgProcesso', this)" title="Copiar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
               </div>
             </div>
             <div class="form-group">
               <label>Número do FPE <span class="dg-info" title="Número no sistema Financeiro Público Estadual">?</span></label>
               <div class="input-with-actions">
                 <input type="text" id="dgFPE" placeholder="Não informado" class="input-text input-blue" />
-                <button type="button" class="input-action-btn" onclick="copiarCampo('dgFPE')" title="Copiar">📋</button>
+                <button type="button" class="input-action-btn btn-copy-view" onclick="copiarCampo('dgFPE', this)" title="Copiar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
               </div>
             </div>
             <div class="form-group">
               <label>Número do contrato externo <span class="dg-info" title="Se houver, número do contrato registrado externamente ao sistema">?</span></label>
               <div class="input-with-actions">
                 <input type="text" id="dgExterno" placeholder="Digite o número do contrato externo" class="input-text input-blue" />
-                <button type="button" class="input-action-btn" onclick="copiarCampo('dgExterno')" title="Copiar">📋</button>
+                <button type="button" class="input-action-btn btn-copy-view" onclick="copiarCampo('dgExterno', this)" title="Copiar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
               </div>
             </div>
             <div class="form-group">
@@ -745,11 +745,19 @@
         </div>
         <div class="form-group">
           <label>Início:</label>
-          <input type="text" id="inputNewInicio" oninput="applyDateMask(this)" placeholder="DD/MM/AAAA" class="input-text" />
+          <span class="date-input-wrap" style="display:block; position:relative;">
+            <input type="text" id="inputNewInicio" oninput="applyDateMask(this)" placeholder="DD/MM/AAAA" class="input-text" style="padding-right:26px;" />
+            <input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'inputNewInicio')" />
+            <span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span>
+          </span>
         </div>
         <div class="form-group">
           <label>Fim:</label>
-          <input type="text" id="inputNewFim" oninput="applyDateMask(this)" placeholder="DD/MM/AAAA" class="input-text" />
+          <span class="date-input-wrap" style="display:block; position:relative;">
+            <input type="text" id="inputNewFim" oninput="applyDateMask(this)" placeholder="DD/MM/AAAA" class="input-text" style="padding-right:26px;" />
+            <input type="date" class="date-picker-hidden" onchange="setDataFromPicker(this,'inputNewFim')" />
+            <span class="th-cal-icon" onclick="abrirDatePicker(this)">📅</span>
+          </span>
         </div>
         <div class="form-group" style="grid-column: span 2;">
           <label>Número do Instrumento:</label>
@@ -879,6 +887,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=46"></script>
+  <script src="script.js?v=47"></script>
 </body>
 </html>

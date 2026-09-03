@@ -999,8 +999,8 @@ function renderizarValoresAtivos() {
 
               <td>${lEditP ? `<select id="p_per_${item.id}" class="input-plain">${getOptionsPeriodicidade(item.periodicidade)}</select>` : item.periodicidade}</td>
 
-              <td>${lEditP ? `<input type="text" id="p_ini_${item.id}" value="${item.inicio}" oninput="applyDateMask(this)" class="input-plain">` : item.inicio}</td>
-              <td>${lEditP ? `<input type="text" id="p_fim_${item.id}" value="${item.fim}" oninput="applyDateMask(this)" class="input-plain">` : item.fim}</td>
+              <td>${lEditP ? inputData(`p_ini_${item.id}`, item.inicio) : item.inicio}</td>
+              <td>${lEditP ? inputData(`p_fim_${item.id}`, item.fim) : item.fim}</td>
 
               ${porHoras ? `<td><strong id="p_horas_${item.id}" style="color:#005F73;">${horasTotais > 0 ? horasTotais.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' h' : '—'}</strong></td>` : ''}
 
@@ -2335,15 +2335,22 @@ function salvarDadosGerais() {
   mostrarToast('Dados Gerais salvos.');
 }
 // Passo 5 (Guilherme, 20/08/2026): handlers dos ícones de ação nos campos
-function copiarCampo(id) {
+// Passo 17 (Sabrina + Ana Paula, 02/09/2026): Copiar padronizado com feedback verde temporário
+function copiarCampo(id, btn) {
   const el = document.getElementById(id);
   if(!el) return;
   const v = el.value || '';
   if(!v.trim()) { mostrarToast('Campo vazio — nada para copiar.'); return; }
-  navigator.clipboard.writeText(v).then(
-    () => mostrarToast('Copiado: ' + v),
-    () => mostrarToast('Não foi possível copiar.')
-  );
+  navigator.clipboard.writeText(v).then(() => {
+    mostrarToast('Copiado com sucesso!');
+    if(btn) {
+      const html = btn.innerHTML;
+      const cor  = btn.style.color;
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+      btn.style.color = '#16a34a';
+      setTimeout(() => { btn.innerHTML = html; btn.style.color = cor; }, 1500);
+    }
+  }, () => mostrarToast('Não foi possível copiar.'));
 }
 function buscarProcesso() {
   const el = document.getElementById('dgProcesso');
