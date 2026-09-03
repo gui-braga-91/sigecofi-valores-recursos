@@ -1041,6 +1041,11 @@ function renderizarValoresAtivos() {
 
   const txtTot = document.getElementById('txtTotalAcumulado');
   if(txtTot) txtTot.textContent = formatarMoedaBR(totalAcumulado);
+
+  // Passo 22 (Sabrina + Ana Paula, 03/09/2026): re-anexa os resizers ao término
+  // de cada render de Valores e Recursos, garantindo redimensionamento contínuo
+  // em Visualizar e Editar, mesmo com edição inline aberta.
+  if(typeof initResizableColumns === 'function') initResizableColumns();
 }
 
 function renderizarInativos() {
