@@ -406,10 +406,11 @@ function copyGroupInput(id, val, oninputFunc, placeholder = "") {
 // ====================================================
 // Ajuste B1: alterna entre os 3 tratamentos visuais da aba Valores e Recursos
 function setTratamento(t) {
-  // Passo 20 (Sabrina + Ana Paula, 03/09/2026): switch A/B/C restaurado; B usa renderFracoesModoB(item)
-  if(t !== 'A' && t !== 'B' && t !== 'C') return;
+  // Passo 21 (Sabrina + Ana Paula, 03/09/2026): apenas A (Tabela) e C (Lista plana)
+  if(t === 'B') t = 'A';
+  if(t !== 'A' && t !== 'C') return;
   tratamentoAtivo = t;
-  ['A','B','C'].forEach(x => {
+  ['A','C'].forEach(x => {
     const btn = document.getElementById('btnTrat' + x);
     if(btn) btn.classList.toggle('tratamento-ativo', x === t);
   });
@@ -909,13 +910,11 @@ function renderizarValoresAtivos() {
                     return `
                       <tr>
                         <td class="col-area">${lEditF ? (() => {
-                          const usadas = Array.isArray(headerAreas) ? headerAreas : [];
-                          const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
-                          const grupoUsadas = usadas.length > 0
-                            ? `<optgroup label="Áreas atendidas">${usadas.map(a=>`<option value="${_htmlEsc(a)}" ${f.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
-                          const grupoOutras = `<optgroup label="Demais áreas">${outras.map(a=>`<option value="${_htmlEsc(a)}" ${f.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
-                          const extra = (f.area && !OPCOES_AREAS.includes(f.area)) ? `<option value="${_htmlEsc(f.area)}" selected>${_htmlEsc(f.area)} (personalizada)</option>` : '';
-                          return `<select id="f_area_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','area',this.value)" class="input-plain"><option value="">—</option>${extra}${grupoUsadas}${grupoOutras}</select>`;
+                          // Passo 21 (03/09/2026): lista plana ordenada + preserva valor personalizado (se houver)
+                          const areas = areasGlobaisOrdenadas();
+                          if(f.area && !areas.includes(f.area)) areas.push(f.area);
+                          areas.sort((a,b)=>a.localeCompare(b,'pt-BR',{sensitivity:'base'}));
+                          return `<select id="f_area_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','area',this.value)" class="input-plain"><option value="">—</option>${areas.map(a=>`<option value="${_htmlEsc(a)}" ${f.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</select>`;
                         })() : (f.area || '—')}</td>
                         <td class="col-uo">${lEditF ? copyGroupInput(`f_uo_${f.id}`, f.uo, '') : (f.uo + copyBtnView(f.uo))}</td>
                         <td class="col-recurso">${lEditF ? `<select id="f_rec_${f.id}" onchange="atualizarFracaoCampo('${item.id}','${f.id}','recurso',this.value)" class="input-plain">${Object.entries(RECURSOS_CATALOG).map(([c,n])=>`<option value="${c}" ${String(f.recurso).trim()===c?'selected':''}>${c} - ${n}</option>`).join('')}</select>` : (formatarRecursoLabel(f) + copyBtnView(f.recurso))}</td>
@@ -1504,13 +1503,11 @@ function renderizarExecucaoFinanceira() {
           <tbody>
             <tr style="background:#fff;">
               <td>${lEditE ? (() => {
-                const usadas = Array.isArray(headerAreas) ? headerAreas : [];
-                const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
-                const grupoUsadas = usadas.length > 0
-                  ? `<optgroup label="Áreas atendidas">${usadas.map(a=>`<option value="${_htmlEsc(a)}" ${emp.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
-                const grupoOutras = `<optgroup label="Demais áreas">${outras.map(a=>`<option value="${_htmlEsc(a)}" ${emp.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
-                const extra = (emp.area && !OPCOES_AREAS.includes(emp.area)) ? `<option value="${_htmlEsc(emp.area)}" selected>${_htmlEsc(emp.area)} (personalizada)</option>` : '';
-                return `<select id="e_area_${emp.id}" class="input-plain"><option value="">—</option>${extra}${grupoUsadas}${grupoOutras}</select>`;
+                // Passo 21 (03/09/2026): lista plana ordenada + preserva valor personalizado
+                const areas = areasGlobaisOrdenadas();
+                if(emp.area && !areas.includes(emp.area)) areas.push(emp.area);
+                areas.sort((a,b)=>a.localeCompare(b,'pt-BR',{sensitivity:'base'}));
+                return `<select id="e_area_${emp.id}" class="input-plain"><option value="">—</option>${areas.map(a=>`<option value="${_htmlEsc(a)}" ${emp.area===a?'selected':''}>${_htmlEsc(a)}</option>`).join('')}</select>`;
               })() : emp.area}</td>
               <td>${lEditE ? `<input type="text" id="e_proj_${emp.id}" value="${emp.projeto}" class="input-plain">` : `<strong>${emp.projeto}</strong>`}</td>
               <td>${lEditE ? copyGroupInput(`e_num_${emp.id}`, emp.numeroEmpenho, '') : `${emp.numeroEmpenho} ${copyBtnView(emp.numeroEmpenho)}`}</td>
@@ -1602,15 +1599,12 @@ function salvarEdicaoParcela(empId, parId) {
 function abrirModalNovoEmpenho() {
   const m = document.getElementById('modalNovoEmpenho');
   if(m) m.classList.remove('hidden');
-  // Passo 14 (revisão 02/09/2026): popular dropdown de Área institucional
+  // Passo 21 (Sabrina + Ana Paula, 03/09/2026): dropdown de Área com lista plana ordenada
   const sel = document.getElementById('inputEmpArea');
   if(sel && sel.tagName === 'SELECT') {
-    const usadas = Array.isArray(headerAreas) ? headerAreas : [];
-    const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
-    const grupoUsadas = usadas.length > 0
-      ? `<optgroup label="Áreas atendidas deste contrato">${usadas.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
-    const grupoOutras = `<optgroup label="Demais áreas institucionais">${outras.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
-    sel.innerHTML = '<option value="">Selecione a área...</option>' + grupoUsadas + grupoOutras;
+    const areas = areasGlobaisOrdenadas();
+    sel.innerHTML = '<option value="">Selecione a área...</option>' +
+      areas.map(a => `<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('');
   }
 }
 
@@ -1738,12 +1732,10 @@ function abrirModalProjeto(parentId) {
   // — as áreas do contrato ficam no topo, o restante do catálogo aparece agrupado abaixo.
   const selectArea = document.getElementById('inputNovaFracArea');
   if(selectArea) {
-    const usadas = Array.isArray(headerAreas) ? headerAreas : [];
-    const outras = OPCOES_AREAS.filter(a => !usadas.includes(a));
-    const grupoUsadas = usadas.length > 0
-      ? `<optgroup label="Áreas atendidas deste contrato">${usadas.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>` : '';
-    const grupoOutras = `<optgroup label="Demais áreas institucionais">${outras.map(a=>`<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('')}</optgroup>`;
-    selectArea.innerHTML = '<option value="">Selecione a área...</option>' + grupoUsadas + grupoOutras;
+    // Passo 21 (03/09/2026): lista única ordenada (sem optgroups)
+    const areas = areasGlobaisOrdenadas();
+    selectArea.innerHTML = '<option value="">Selecione a área...</option>' +
+      areas.map(a => `<option value="${_htmlEsc(a)}">${_htmlEsc(a)}</option>`).join('');
   }
 
   // Passo 18 (Sabrina + Ana Paula, 02/09/2026): gatilho automático pela periodicidade do pai.
@@ -2386,11 +2378,18 @@ function renderHeaderChips() {
 }
 // Passo 5 (Guilherme, 20/08/2026): autocomplete flutuante com sugestões padrão
 // Passo 14 (refinamento, 02/09/2026): catálogo institucional único usado em TODOS os dropdowns de Área
-// (cabeçalho / valores e recursos / execução financeira). Ordem alfabética.
-const OPCOES_AREAS = ['ACCESS','CAGE','DEPAD','DETIC','DICAF','GSF','JORNAL VALE','RECEITA','SECC','SEFIN','SGC','TARF','TESOURO'];
+// Passo 21 (Sabrina + Ana Paula, 03/09/2026): JORNAL VALE removido; lista única ordenada.
+const OPCOES_AREAS = ['ACCESS','CAGE','DEPAD','DETIC','DICAF','GSF','RECEITA','SECC','SEFIN','SGC','TARF','TESOURO'];
+// Retorna a lista global unificada e ordenada (catálogo + áreas atendidas do contrato, sem duplicar).
+function areasGlobaisOrdenadas() {
+  const set = new Set(OPCOES_AREAS);
+  (Array.isArray(headerAreas) ? headerAreas : []).forEach(a => { if(a && a.trim()) set.add(a.trim()); });
+  return [...set].sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+}
 const OPCOES_TAGS  = ['SIGECOFI', 'PROMOVE', 'Fábrica de Software', 'Consultoria', 'Manutenção', 'TI', 'Encerrado', 'Prioritário'];
 function renderSugestoes(tipo, termo) {
-  const opcoes = tipo === 'area' ? OPCOES_AREAS : OPCOES_TAGS;
+  // Passo 21 (03/09/2026): autocomplete de Área usa a lista global ordenada (sem JORNAL VALE, sem optgroups)
+  const opcoes = tipo === 'area' ? areasGlobaisOrdenadas() : OPCOES_TAGS;
   const usados = tipo === 'area' ? headerAreas : headerTags;
   const box = document.getElementById(tipo === 'area' ? 'sugArea' : 'sugTag');
   if(!box) return;
