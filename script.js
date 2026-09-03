@@ -210,7 +210,9 @@ function agruparFracoesPorProjeto(fracoes) {
   return ordem.map(pCode => ({ pCode, itens: g[pCode] }));
 }
 
-// Tratamento B · Barras de cota — grid de cards por projeto, com barra de progresso da %.
+// Passo 22 (Sabrina + Ana Paula, 03/09/2026): opção B foi descontinuada; código mantido
+// como fallback interno caso algum estado antigo salve tratamentoAtivo='B' no LocalStorage.
+// Não é mais acessível pela UI; setTratamento(B) redireciona para A automaticamente.
 function renderFracoesModoB(item) {
   const grupos = agruparFracoesPorProjeto(item.fracoes || []);
   if(grupos.length === 0) {
@@ -218,7 +220,7 @@ function renderFracoesModoB(item) {
   }
   return `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <span style="font-weight:bold; color:#005F73; font-size:12px;">DETALHAMENTO DE FRACIONAMENTO — Barras de cota</span>
+      <span style="font-weight:bold; color:#005F73; font-size:12px;">DETALHAMENTO DE FRACIONAMENTO</span>
     </div>
     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:12px;">
       ${grupos.map(g => {
@@ -799,8 +801,12 @@ function renderizarValoresAtivos() {
   // Passo 15: reconsolida Valor Proporcional + Valor Acumulado antes de pintar a tela
   recalcularProporcionaisAtivos();
 
-  // Ajuste B1 (Guilherme, 06/08/2026): renderiza tratamentos B (barras) e C (lista plana)
-  if(tratamentoAtivo === 'B' || tratamentoAtivo === 'C') {
+  // Passo 22 (Sabrina + Ana Paula, 03/09/2026): B descontinuado — se algum LocalStorage
+  // antigo trouxer 'B', normaliza para 'A' antes de decidir o renderer.
+  if(tratamentoAtivo === 'B') tratamentoAtivo = 'A';
+
+  // Ajuste B1 (Guilherme, 06/08/2026): renderiza tratamento C (lista plana)
+  if(tratamentoAtivo === 'C') {
     let tot = 0;
     recursosAtivos.forEach(item => {
       tot += (item.valorProporcional || 0);
@@ -814,7 +820,7 @@ function renderizarValoresAtivos() {
           <span>Proporcional: <strong>${formatarMoedaBR(item.valorProporcional)}</strong></span>
         </div>
         <div class="sub-container">
-          ${tratamentoAtivo === 'B' ? renderFracoesModoB(item) : renderFracoesModoC(item)}
+          ${renderFracoesModoC(item)}
         </div>
       `;
       container.appendChild(card);
