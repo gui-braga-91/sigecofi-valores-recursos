@@ -266,23 +266,31 @@ function renderFracoesModoC(item) {
   if(grupos.length === 0) {
     return `<div style="padding:16px; text-align:center; color:#94a3b8; font-style:italic;">Sem frações cadastradas neste instrumento.</div>`;
   }
+  // Passo 23 (Ana Paula + Sabrina, 09/09/2026): suporte a Horas na Lista Plana
+  const _porHoras = ehInstrumentoPorHoras(item);
+  const fmtH = (h) => (Number(h)||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' h';
   const chips = grupos.map(g => {
     const cor = corProjeto(g.pCode);
     const somaPct = g.itens.reduce((s,f) => s + (f.pct || 0), 0);
     const somaPctFmt = (somaPct % 1 === 0 ? somaPct : parseFloat(somaPct.toFixed(2))).toString().replace('.', ',');
-    return `<span style="padding:3px 10px; background:#fff; border:1px solid ${cor}; color:${cor}; border-radius:12px; font-weight:bold; font-size:11px;">${g.pCode} · ${somaPctFmt}%</span>`;
+    const somaH = g.itens.reduce((s,f) => s + (Number(f.qtdHoras) || 0), 0);
+    const horasChip = (_porHoras && somaH > 0) ? ` · ${fmtH(somaH)}` : '';
+    return `<span style="padding:3px 10px; background:#fff; border:1px solid ${cor}; color:${cor}; border-radius:12px; font-weight:bold; font-size:11px;">${g.pCode} · ${somaPctFmt}%${horasChip}</span>`;
   }).join('');
   const linhas = (item.fracoes || []).map(f => {
     const cor = corProjeto(f.projeto);
     const pctStr = (f.pct % 1 === 0 ? f.pct : parseFloat(f.pct.toFixed(2))).toString().replace('.', ',');
     const barW = Math.min(100, f.pct);
+    const projTitle = nomeProjeto(f.projeto);
     return `
       <tr>
-        <td style="font-weight:bold; color:${cor};">${f.projeto}</td>
+        <td style="font-weight:bold; color:${cor};" title="${projTitle ? _htmlEsc(projTitle) : ''}">${f.projeto}</td>
         <td>${f.uo}</td>
         <td>${f.area || '—'}</td>
         <td>${formatarRecursoLabel(f)}</td>
         <td style="color:#64748b; font-size:11px;">${f.nad}</td>
+        ${_porHoras ? `<td style="text-align:right;">${f.qtdHoras ? fmtH(f.qtdHoras) : '—'}</td>` : ''}
+        ${_porHoras ? `<td style="text-align:right;">${f.valorHora ? formatarMoedaBR(f.valorHora) : '—'}</td>` : ''}
         <td style="min-width:140px;">
           <div style="height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
             <div style="width:${barW}%; background:${cor}; height:100%;"></div>
@@ -299,16 +307,18 @@ function renderFracoesModoC(item) {
       ${chips}
     </div>
     <div class="table-responsive">
-      <table class="resizable-table" style="min-width:800px; background:#fff; border:1px solid #c0dde5;">
+      <table class="resizable-table" style="min-width:${_porHoras ? '1000px' : '800px'}; background:#fff; border:1px solid #c0dde5;">
         <thead>
           <tr style="background:#f8fafc; color:#334155; font-size:11px;">
-            <th style="width:8%;">Projeto</th>
-            <th style="width:8%;">UO</th>
-            <th style="width:10%;">Área</th>
-            <th style="width:22%;">Recurso</th>
-            <th style="width:14%;">NAD</th>
-            <th style="width:18%;">Cota</th>
-            <th style="width:8%; text-align:right;">%</th>
+            <th style="width:7%;">Projeto</th>
+            <th style="width:6%;">UO</th>
+            <th style="width:9%;">Área</th>
+            <th style="width:${_porHoras ? '18%' : '22%'};">Recurso</th>
+            <th style="width:12%;">NAD</th>
+            ${_porHoras ? '<th style="width:8%; text-align:right;">Qtd. Horas</th>' : ''}
+            ${_porHoras ? '<th style="width:8%; text-align:right;">Valor da Hora</th>' : ''}
+            <th style="width:${_porHoras ? '14%' : '18%'};">Cota</th>
+            <th style="width:6%; text-align:right;">%</th>
             <th style="width:12%; text-align:right;">Valor Fracionado</th>
           </tr>
         </thead>
@@ -729,6 +739,64 @@ function atualizarFracaoCampo(pId, fId, campo, valor) {
   if(f) { f[campo] = valor; }
 }
 
+// ============================================================================
+// Passo 23 (Ana Paula + Sabrina, 09/09/2026)
+// Drag-and-drop dos instrumentos com Contrato Original travado no topo.
+// A ordem manual sobrescreve a ordem hierárquica automática (RN-VR-06).
+// Salva `ordemManual: [id1, id2, ...]` no state para persistência.
+// ============================================================================
+let _dragSrcId = null;
+function dragInstrumento_start(ev) {
+  _dragSrcId = ev.currentTarget.dataset.instrumentoId;
+  ev.currentTarget.classList.add('drag-source');
+  try { ev.dataTransfer.setData('text/plain', _dragSrcId); } catch(_) {}
+  ev.dataTransfer.effectAllowed = 'move';
+}
+function dragInstrumento_end(ev) {
+  ev.currentTarget.classList.remove('drag-source');
+  document.querySelectorAll('.card-n1.drag-over-top,.card-n1.drag-over-bottom')
+    .forEach(el => el.classList.remove('drag-over-top','drag-over-bottom'));
+  _dragSrcId = null;
+}
+function dragInstrumento_over(ev) {
+  if(!_dragSrcId) return;
+  const target = ev.currentTarget;
+  if(target.dataset.instrumentoId === _dragSrcId) return;
+  // Bloqueia soltar ANTES do Contrato Original
+  if(target.dataset.original === '1') { ev.dataTransfer.dropEffect = 'none'; return; }
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  const rect = target.getBoundingClientRect();
+  const meio = rect.top + rect.height / 2;
+  target.classList.toggle('drag-over-top', ev.clientY < meio);
+  target.classList.toggle('drag-over-bottom', ev.clientY >= meio);
+}
+function dragInstrumento_drop(ev) {
+  if(!_dragSrcId) return;
+  const target = ev.currentTarget;
+  if(target.dataset.original === '1') return; // não pode soltar sobre o Original
+  if(target.dataset.instrumentoId === _dragSrcId) return;
+  ev.preventDefault();
+  const srcIdx = recursosAtivos.findIndex(x => x.id === _dragSrcId);
+  const tgtIdx = recursosAtivos.findIndex(x => x.id === target.dataset.instrumentoId);
+  if(srcIdx < 0 || tgtIdx < 0) return;
+  const rect = target.getBoundingClientRect();
+  const meio = rect.top + rect.height / 2;
+  const antes = ev.clientY < meio;
+  const [moved] = recursosAtivos.splice(srcIdx, 1);
+  let insertAt = recursosAtivos.findIndex(x => x.id === target.dataset.instrumentoId);
+  if(!antes) insertAt += 1;
+  // Nunca antes do Contrato Original (assumido em índice 0)
+  const idxOriginal = recursosAtivos.findIndex(x => /contrato\s+original/i.test(x.instrumento || ''));
+  if(idxOriginal >= 0 && insertAt <= idxOriginal) insertAt = idxOriginal + 1;
+  recursosAtivos.splice(insertAt, 0, moved);
+  ordemManualInstrumentos = recursosAtivos.map(x => x.id);
+  persistState();
+  mostrarToast('Ordem dos instrumentos atualizada com sucesso.');
+  renderizarValoresAtivos();
+}
+let ordemManualInstrumentos = null;
+
 // Passo 14 (Guilherme, 02/09/2026) — RN-05: Redistribuição Automática
 // Ajusta proporcionalmente as % existentes para que a soma feche em 100% do Valor Proporcional.
 function redistribuir100(pId) {
@@ -835,11 +903,30 @@ function renderizarValoresAtivos() {
   const searchInput = document.getElementById('inputSearch');
   const termoBusca = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-  const listaFiltrada = recursosAtivos.filter(r =>
+  // Passo 23: ordem manual (drag-and-drop) tem prioridade sobre a ordenação hierárquica.
+  // Contrato Original é sempre re-encaixado no topo mesmo com ordem manual.
+  const aplicaOrdem = (arr) => {
+    const original = arr.find(x => /contrato\s+original/i.test(x.instrumento || ''));
+    if(Array.isArray(ordemManualInstrumentos) && ordemManualInstrumentos.length > 0) {
+      const idxs = new Map(ordemManualInstrumentos.map((id,i) => [id,i]));
+      const ordered = arr.slice().sort((a,b) => {
+        const ia = idxs.has(a.id) ? idxs.get(a.id) : 999;
+        const ib = idxs.has(b.id) ? idxs.get(b.id) : 999;
+        return ia - ib;
+      });
+      if(original) {
+        const semOriginal = ordered.filter(x => x.id !== original.id);
+        return [original, ...semOriginal];
+      }
+      return ordered;
+    }
+    return arr.slice().sort(_ordenaInstrumento);
+  };
+  const listaFiltrada = aplicaOrdem(recursosAtivos.filter(r =>
     r.instrumento.toLowerCase().includes(termoBusca) ||
     r.numero.toLowerCase().includes(termoBusca) ||
     r.valorAtualizado.toString().includes(termoBusca)
-  ).slice().sort(_ordenaInstrumento);
+  ));
 
   // Ajuste 1.2 (Ana Paula, 05/08/2026): Acumulado = Σ Valor Proporcional
   let totalAcumulado = 0;
@@ -847,7 +934,19 @@ function renderizarValoresAtivos() {
   listaFiltrada.forEach(item => {
     totalAcumulado += item.valorProporcional;
     const card = document.createElement('div');
-    card.className = 'card-recurso';
+    card.className = 'card-recurso card-n1';
+    // Passo 23 (Ana Paula + Sabrina, 09/09/2026): drag-and-drop dos instrumentos.
+    // Contrato Original NUNCA é arrastável e serve de âncora fixa no topo (bloqueia drops acima).
+    const _ehOriginal = /contrato\s+original/i.test(item.instrumento || '');
+    card.dataset.instrumentoId = item.id;
+    card.dataset.original = _ehOriginal ? '1' : '0';
+    if(!_ehOriginal) {
+      card.draggable = true;
+      card.addEventListener('dragstart', dragInstrumento_start);
+      card.addEventListener('dragend',   dragInstrumento_end);
+    }
+    card.addEventListener('dragover',  dragInstrumento_over);
+    card.addEventListener('drop',      dragInstrumento_drop);
 
     const projs = {};
     item.fracoes.forEach(f => {
@@ -877,14 +976,18 @@ function renderizarValoresAtivos() {
         const isProjExpanded = item.projetosExpandidos[pCode];
         const chevronIcon = isProjExpanded ? iconChevronDown : iconChevronRight;
 
+        const projNome = nomeProjeto(pCode);
+        const projCor  = corProjeto(pCode);
         htmlGrupos += `
-          <div class="proj-block">
-            <div class="proj-bar" onclick="toggleProjExpand('${item.id}', '${pCode}')">
-              <div style="display:flex; align-items:center; gap:6px;">
+          <div class="proj-block proj-block-n2" style="border-left-color:${projCor};">
+            <div class="proj-bar proj-bar-n2" onclick="toggleProjExpand('${item.id}', '${pCode}')" style="border-left:4px solid ${projCor};">
+              <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
                 ${chevronIcon}
-                <span>PROJETO: ${pCode} <span style="font-size:10px; font-weight:normal; color:#64748b;">(${lista.length} fração/ões)</span></span>
+                <span class="proj-code">PROJETO ${pCode}</span>
+                ${projNome ? `<span class="proj-nome" title="${_htmlEsc(projNome)}">· ${_htmlEsc(projNome)}</span>` : ''}
+                <span class="proj-frac-count">(${lista.length} fração/ões)</span>
               </div>
-              <div>
+              <div style="flex-shrink:0;">
                 ${sumHorasFmt ? `<span id="proj_tot_horas_${item.id}_${pCode}" style="margin-right:12px; color:#005F73; font-weight:600;">${sumHorasFmt}</span>` : `<span id="proj_tot_horas_${item.id}_${pCode}" style="margin-right:12px; color:#005F73; font-weight:600;"></span>`}
                 <span id="proj_tot_val_${item.id}_${pCode}" style="margin-right:12px;">Total: ${formatarMoedaBR(sumVal)}</span>
                 <span id="proj_tot_pct_${item.id}_${pCode}" style="background:#005F73; color:white; padding:2px 6px; border-radius:3px; font-size:10px;">${sumPctFmt}%</span>
@@ -969,8 +1072,8 @@ function renderizarValoresAtivos() {
 
       htmlSub = `
         <div class="sub-container">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-            <span style="font-weight:bold; color:#005F73;">DETALHAMENTO DE FRACIONAMENTO DOS RECURSOS</span>
+          <div class="secao-subtitulo">
+            <span class="secao-subtitulo-txt">↳ Detalhamento de Fracionamento de Recursos</span>
             ${isEditGlobal ? `<button onclick="abrirModalProjeto('${item.id}')" class="btn-sigecofi-edit" style="font-size:11px; padding:4px 10px;">+ Adicionar Nova Fração</button>` : ''}
           </div>
           ${htmlGrupos || '<div style="color:#94a3b8; font-style:italic; text-align:center; padding:8px; background:#fff; border:1px solid #c0dde5; border-radius:4px;">Nenhuma fração cadastrada.</div>'}
@@ -989,11 +1092,13 @@ function renderizarValoresAtivos() {
     // Passo 15 (Sabrina + Ana Paula, 02/09/2026): coluna Horas Totais só aparece quando o instrumento é "Horas"
     const horasTotais = (item.fracoes || []).reduce((s, f) => s + (Number(f.qtdHoras) || 0), 0);
     const porHoras = ehInstrumentoPorHoras(item);
+    const podeArrastar = !/contrato\s+original/i.test(item.instrumento || '');
     card.innerHTML = `
       <div class="table-responsive">
         <table class="resizable-table">
           <thead>
             <tr>
+              <th style="width:32px; padding:0;" class="col-drag" title="${podeArrastar ? 'Arraste para reordenar' : 'Contrato Original é fixo no topo'}"></th>
               <th style="width:12%;">Valor Atualizado ↕</th>
               <th style="width:10%;">Periodicidade ↕</th>
               <th style="width:9%;">Início ↕</th>
@@ -1007,6 +1112,11 @@ function renderizarValoresAtivos() {
           </thead>
           <tbody>
             <tr>
+              <td class="col-drag" style="padding:0; text-align:center; cursor:${podeArrastar ? 'grab' : 'not-allowed'}; user-select:none;">
+                ${podeArrastar
+                  ? `<span class="drag-handle" title="Arraste para reordenar" aria-label="Reordenar instrumento">⠿</span>`
+                  : `<span class="drag-handle drag-handle-lock" title="Contrato Original é fixo no topo (imutável)" aria-label="Instrumento imutável">🔒</span>`}
+              </td>
               <td><strong>${formatarMoedaBR(item.valorAtualizado)}</strong></td>
 
               <td>${lEditP ? `<select id="p_per_${item.id}" class="input-plain">${getOptionsPeriodicidade(item.periodicidade)}</select>` : item.periodicidade}</td>
@@ -1727,14 +1837,22 @@ function abrirModalProjeto(parentId) {
 
   const select = document.getElementById('selectProjetoExistente');
   if(!select) return;
-  select.innerHTML = '';
-  
-  const projsExistentes = [...new Set(parent.fracoes.map(f => f.projeto))];
-  projsExistentes.forEach(p => {
-    select.innerHTML += `<option value="${p}">Pertence ao PROJETO: ${p}</option>`;
-  });
-
-  select.innerHTML += `<option value="NOVO_PROJETO">➕ Criar Novo Projeto</option>`;
+  // Passo 23 (Ana Paula + Sabrina, 09/09/2026): dropdown usa CATALOGO_PROJETOS oficial (18 projetos)
+  // Projetos já presentes no contrato aparecem primeiro; catálogo completo abaixo.
+  const projsExistentes = [...new Set(parent.fracoes.map(f => f.projeto))].sort();
+  const optsExistentes = projsExistentes.map(p => {
+    const nome = nomeProjeto(p);
+    return `<option value="${p}">${p}${nome ? ' · ' + _htmlEsc(nome) : ''} (já neste instrumento)</option>`;
+  }).join('');
+  const restantes = Object.keys(CATALOGO_PROJETOS).sort().filter(c => !projsExistentes.includes(c));
+  const optsRestantes = restantes.map(c => {
+    const p = CATALOGO_PROJETOS[c];
+    return `<option value="${c}" data-uo="${p.uo}">${c} · ${_htmlEsc(p.nome)}</option>`;
+  }).join('');
+  select.innerHTML =
+    (optsExistentes ? `<optgroup label="Projetos já presentes neste instrumento">${optsExistentes}</optgroup>` : '') +
+    `<optgroup label="Catálogo oficial SEFAZ/RS (18 projetos)">${optsRestantes}</optgroup>` +
+    `<option value="NOVO_PROJETO">➕ Criar Novo Projeto (fora do catálogo)</option>`;
 
   toggleNovoProjInput(select.value);
 
@@ -1850,11 +1968,14 @@ function confirmarAdicionarFracao() {
   if (!parent.projetosExpandidos) parent.projetosExpandidos = {};
   parent.projetosExpandidos[codigoProj] = true;
 
+  // Passo 23: UO pré-preenchida a partir do CATALOGO_PROJETOS (14.90 ou 14.01)
+  const uoCatalogo = uoDoProjeto(codigoProj);
+  const uoInicial  = uoCatalogo ? uoCatalogo.replace('.', '') : '1490';
   parent.fracoes.push({
     id: 'f_' + Date.now(),
     projeto: codigoProj,
     area: area,
-    uo: '1490',
+    uo: uoInicial,
     recurso: '1169',
     nad: '',
     periodo: '',
@@ -2391,6 +2512,37 @@ function renderHeaderChips() {
 // Passo 14 (refinamento, 02/09/2026): catálogo institucional único usado em TODOS os dropdowns de Área
 // Passo 21 (Sabrina + Ana Paula, 03/09/2026): JORNAL VALE removido; lista única ordenada.
 const OPCOES_AREAS = ['ACCESS','CAGE','DEPAD','DETIC','DICAF','GSF','RECEITA','SECC','SEFIN','SGC','TARF','TESOURO'];
+
+// Passo 23 (Ana Paula + Sabrina, 09/09/2026): Catálogo oficial dos 18 Projetos SEFAZ/RS (UO 14.90 e 14.01)
+const CATALOGO_PROJETOS = {
+  '1914': { nome: 'GESTÃO DO FUNSEFAZ - TESOURO', uo: '14.90' },
+  '1917': { nome: 'GESTÃO DO FUNSEFAZ - CAGE',    uo: '14.90' },
+  '1918': { nome: 'GESTÃO DO FUNSEFAZ - RECEITA', uo: '14.90' },
+  '2080': { nome: 'CONVENIO CONFAZ',              uo: '14.90' },
+  '2191': { nome: 'GESTAO DO GABINETE DO SECRETARIO DA FAZENDA', uo: '14.01' },
+  '2197': { nome: 'GESTÃO DO DEPARTAMENTO DE ADMINISTRACAO',     uo: '14.01' },
+  '2327': { nome: 'REFORMA TRIBUTARIA - SEFAZ',                  uo: '14.90' },
+  '3817': { nome: 'QUALIFICACAO DE RECURSOS HUMANOS - SEFAZ',    uo: '14.90' },
+  '3919': { nome: 'GESTÃO E APRIMORAMENTO DE TIC - DEPAD',       uo: '14.90' },
+  '3920': { nome: 'GESTAO E APRIMORAMENTO DE TIC - DETIC',       uo: '14.90' },
+  '3921': { nome: 'GESTÃO E APRIMORAMENTO DE TIC - CAGE',        uo: '14.90' },
+  '3922': { nome: 'GESTÃO E APRIMORAMENTO DE TIC - TESOURO',     uo: '14.90' },
+  '3923': { nome: 'GESTÃO E APRIMORAMENTO DE TIC - RECEITA',     uo: '14.90' },
+  '5735': { nome: 'PROFISCO II / SEFAZ',                         uo: '14.01' },
+  '6805': { nome: 'GESTÃO DO FUNSEFAZ - DEPAD',                  uo: '14.90' },
+  '6806': { nome: 'GESTÃO DO FUNSEFAZ - DETIC',                  uo: '14.90' },
+  '6807': { nome: 'GESTÃO DO FUNSEFAZ - GESTAO ESTRATEGICA',     uo: '14.90' },
+  '6809': { nome: 'GESTAO DE DESENVOLVIMENTO ORGANIZACIONAL - CAGE', uo: '14.90' }
+};
+function nomeProjeto(codigo)  { return CATALOGO_PROJETOS[String(codigo).trim()]?.nome || ''; }
+function uoDoProjeto(codigo)  { return CATALOGO_PROJETOS[String(codigo).trim()]?.uo   || ''; }
+function optionsProjetoOficial(selecionado) {
+  return Object.keys(CATALOGO_PROJETOS).sort().map(cod => {
+    const p = CATALOGO_PROJETOS[cod];
+    const sel = String(selecionado).trim() === cod ? ' selected' : '';
+    return `<option value="${cod}"${sel}>${cod} · ${p.nome}</option>`;
+  }).join('');
+}
 // Retorna a lista global unificada e ordenada (catálogo + áreas atendidas do contrato, sem duplicar).
 function areasGlobaisOrdenadas() {
   const set = new Set(OPCOES_AREAS);
@@ -3084,7 +3236,8 @@ function persistState() {
         logAcoes,
         perfilAtivo, usuarioLogado,
         logMasterExclusoes: window.logAuditoriaExclusoes,
-        logSolicitacoesExclusao: window.logSolicitacoesExclusao
+        logSolicitacoesExclusao: window.logSolicitacoesExclusao,
+        ordemManualInstrumentos
       };
       localStorage.setItem(LS_KEY, JSON.stringify(snap));
     } catch(e) { /* silencioso */ }
@@ -3114,6 +3267,7 @@ function restoreState() {
     if(typeof s.usuarioLogado === 'string') usuarioLogado = s.usuarioLogado;
     window.logAuditoriaExclusoes  = Array.isArray(s.logMasterExclusoes) ? s.logMasterExclusoes : [];
     window.logSolicitacoesExclusao = Array.isArray(s.logSolicitacoesExclusao) ? s.logSolicitacoesExclusao : [];
+    if(Array.isArray(s.ordemManualInstrumentos)) ordemManualInstrumentos = s.ordemManualInstrumentos;
     // Aplica o toggle visual do perfil já no boot
     setTimeout(() => setPerfilAtivo(perfilAtivo), 0);
   } catch(e) { /* silencioso */ }

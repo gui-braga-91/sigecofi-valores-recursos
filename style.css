@@ -462,6 +462,113 @@ td {
   text-overflow: ellipsis;
 }
 
+/* Passo 23 (Ana Paula + Sabrina, 09/09/2026): Hierarquia visual — Nível 1 vs Nível 2 vs Nível 3
+   O objetivo é dar profundidade sem quebrar a paleta institucional SIGECOFI. */
+
+/* Barra de subtítulo "↳ Detalhamento de Fracionamento" (entre N1 e N2) */
+.secao-subtitulo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  margin: 4px 0 10px;
+  background: #e0eff3;
+  border: 1px solid #b6d4dc;
+  border-radius: 5px;
+}
+.secao-subtitulo-txt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #004856;
+}
+
+/* Nível 2 · Barra do Projeto — card agrupador com cor por projeto */
+.proj-block-n2 {
+  background: #f0f7f9;
+  border: 1px solid #d3e3e8;
+  border-left: 4px solid #005F73;
+  border-radius: 6px;
+  padding: 0;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.proj-bar-n2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: transparent;
+  border-radius: 0;
+  transition: background 0.12s ease;
+}
+.proj-bar-n2:hover { background: rgba(0, 95, 115, 0.06); }
+.proj-code {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 12.5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.proj-nome {
+  font-weight: 600;
+  color: #334155;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+.proj-frac-count {
+  font-size: 10px;
+  font-weight: normal;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Nível 3 · Cabeçalho da grade de frações (diferenciado do teal do N1) */
+.tabela-fracao-n2 thead tr {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+}
+.tabela-fracao-n2 thead th {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.tabela-fracao-n2 tbody tr:nth-child(odd)  { background: #ffffff; }
+.tabela-fracao-n2 tbody tr:nth-child(even) { background: #f8fafc; }
+.tabela-fracao-n2 tbody tr:hover { background: #e0f2fe !important; }
+
+/* Drag-and-drop — handle e feedback visual */
+.card-n1.drag-source { opacity: 0.4; }
+.card-n1.drag-over-top    { box-shadow: 0 -3px 0 0 #f97316 inset, 0 0 0 2px rgba(249, 115, 22, 0.15); }
+.card-n1.drag-over-bottom { box-shadow: 0  3px 0 0 #f97316 inset, 0 0 0 2px rgba(249, 115, 22, 0.15); }
+.drag-handle {
+  display: inline-block;
+  font-size: 16px;
+  color: #94a3b8;
+  cursor: grab;
+  padding: 2px 6px;
+  line-height: 1;
+  user-select: none;
+  transition: color 0.12s ease;
+}
+.drag-handle:hover { color: #005F73; }
+.drag-handle:active { cursor: grabbing; color: #f97316; }
+.drag-handle-lock { cursor: not-allowed; color: #64748b; font-size: 12px; }
+.col-drag { background: transparent; }
+
 /* Passo 19 (Sabrina + Ana Paula, 03/09/2026): Seletor de Perfil no topo (Padrão x Master) */
 .perfil-switch {
   margin-left: auto;
