@@ -735,8 +735,10 @@
       <!-- Passo 18 (Sabrina + Ana Paula, 02/09/2026): gatilho automático pela periodicidade
            do instrumento pai. "Horas" -> mostra Qtd. Horas + Valor da Hora; qualquer outra
            periodicidade -> mostra apenas Valor Fracionado + % (digitáveis). -->
-      <div class="form-group" id="lblGatilhoPeriodicidade" style="background:#f0f9fc; border:1px solid #b6d4dc; padding:8px 12px; border-radius:6px; font-size:11px; color:#005F73;">
-        Instrumento pai · <strong id="txtGatilhoPeriodicidade" style="color:#005F73;">—</strong>
+      <!-- Passo 24 (Ana Paula + Sabrina, 09/09/2026): faixa informativa oculta;
+           a lógica condicional Horas vs. Valor Direto continua nos bastidores. -->
+      <div class="form-group hidden" id="lblGatilhoPeriodicidade" aria-hidden="true">
+        <span id="txtGatilhoPeriodicidade"></span>
       </div>
       <div id="grpFracaoHoras" class="hidden">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
@@ -957,6 +959,6 @@
     </div>
   </div>
 
-  <script src="script.js?v=55"></script>
+  <script src="script.js?v=56"></script>
 </body>
 </html>

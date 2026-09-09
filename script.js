@@ -935,18 +935,20 @@ function renderizarValoresAtivos() {
     totalAcumulado += item.valorProporcional;
     const card = document.createElement('div');
     card.className = 'card-recurso card-n1';
-    // Passo 23 (Ana Paula + Sabrina, 09/09/2026): drag-and-drop dos instrumentos.
-    // Contrato Original NUNCA é arrastável e serve de âncora fixa no topo (bloqueia drops acima).
+    // Passo 23/24 (Ana Paula + Sabrina, 09/09/2026): drag-and-drop dos instrumentos.
+    // Só habilitado em Modo Editar. Contrato Original NUNCA é arrastável.
     const _ehOriginal = /contrato\s+original/i.test(item.instrumento || '');
     card.dataset.instrumentoId = item.id;
     card.dataset.original = _ehOriginal ? '1' : '0';
-    if(!_ehOriginal) {
-      card.draggable = true;
-      card.addEventListener('dragstart', dragInstrumento_start);
-      card.addEventListener('dragend',   dragInstrumento_end);
+    if(isEditGlobal) {
+      if(!_ehOriginal) {
+        card.draggable = true;
+        card.addEventListener('dragstart', dragInstrumento_start);
+        card.addEventListener('dragend',   dragInstrumento_end);
+      }
+      card.addEventListener('dragover',  dragInstrumento_over);
+      card.addEventListener('drop',      dragInstrumento_drop);
     }
-    card.addEventListener('dragover',  dragInstrumento_over);
-    card.addEventListener('drop',      dragInstrumento_drop);
 
     const projs = {};
     item.fracoes.forEach(f => {
@@ -1093,12 +1095,14 @@ function renderizarValoresAtivos() {
     const horasTotais = (item.fracoes || []).reduce((s, f) => s + (Number(f.qtdHoras) || 0), 0);
     const porHoras = ehInstrumentoPorHoras(item);
     const podeArrastar = !/contrato\s+original/i.test(item.instrumento || '');
+    // Passo 24 (Ana Paula + Sabrina, 09/09/2026): coluna de arraste só em Modo Editar
+    const _mostraDrag = isEditGlobal;
     card.innerHTML = `
       <div class="table-responsive">
         <table class="resizable-table">
           <thead>
             <tr>
-              <th style="width:32px; padding:0;" class="col-drag" title="${podeArrastar ? 'Arraste para reordenar' : 'Contrato Original é fixo no topo'}"></th>
+              ${_mostraDrag ? `<th style="width:32px; padding:0;" class="col-drag" title="${podeArrastar ? 'Arraste para reordenar' : 'Contrato Original é fixo no topo'}"></th>` : ''}
               <th style="width:12%;">Valor Atualizado ↕</th>
               <th style="width:10%;">Periodicidade ↕</th>
               <th style="width:9%;">Início ↕</th>
@@ -1112,11 +1116,11 @@ function renderizarValoresAtivos() {
           </thead>
           <tbody>
             <tr>
-              <td class="col-drag" style="padding:0; text-align:center; cursor:${podeArrastar ? 'grab' : 'not-allowed'}; user-select:none;">
+              ${_mostraDrag ? `<td class="col-drag" style="padding:0; text-align:center; cursor:${podeArrastar ? 'grab' : 'not-allowed'}; user-select:none;">
                 ${podeArrastar
                   ? `<span class="drag-handle" title="Arraste para reordenar" aria-label="Reordenar instrumento">⠿</span>`
                   : `<span class="drag-handle drag-handle-lock" title="Contrato Original é fixo no topo (imutável)" aria-label="Instrumento imutável">🔒</span>`}
-              </td>
+              </td>` : ''}
               <td><strong>${formatarMoedaBR(item.valorAtualizado)}</strong></td>
 
               <td>${lEditP ? `<select id="p_per_${item.id}" class="input-plain">${getOptionsPeriodicidade(item.periodicidade)}</select>` : item.periodicidade}</td>
@@ -1837,22 +1841,16 @@ function abrirModalProjeto(parentId) {
 
   const select = document.getElementById('selectProjetoExistente');
   if(!select) return;
-  // Passo 23 (Ana Paula + Sabrina, 09/09/2026): dropdown usa CATALOGO_PROJETOS oficial (18 projetos)
-  // Projetos já presentes no contrato aparecem primeiro; catálogo completo abaixo.
-  const projsExistentes = [...new Set(parent.fracoes.map(f => f.projeto))].sort();
-  const optsExistentes = projsExistentes.map(p => {
-    const nome = nomeProjeto(p);
-    return `<option value="${p}">${p}${nome ? ' · ' + _htmlEsc(nome) : ''} (já neste instrumento)</option>`;
+  // Passo 24 (Ana Paula + Sabrina, 09/09/2026): dropdown UNIFICADO — lista plana ordenada
+  // numericamente dos 18 projetos SEFAZ/RS + opção "Criar Novo Projeto" no final.
+  // Sem optgroups, sem sufixos "(já neste instrumento)".
+  const codigosOrdenados = Object.keys(CATALOGO_PROJETOS)
+    .sort((a, b) => Number(a) - Number(b));
+  const opts = codigosOrdenados.map(cod => {
+    const p = CATALOGO_PROJETOS[cod];
+    return `<option value="${cod}" data-uo="${p.uo}">${cod} · ${_htmlEsc(p.nome)}</option>`;
   }).join('');
-  const restantes = Object.keys(CATALOGO_PROJETOS).sort().filter(c => !projsExistentes.includes(c));
-  const optsRestantes = restantes.map(c => {
-    const p = CATALOGO_PROJETOS[c];
-    return `<option value="${c}" data-uo="${p.uo}">${c} · ${_htmlEsc(p.nome)}</option>`;
-  }).join('');
-  select.innerHTML =
-    (optsExistentes ? `<optgroup label="Projetos já presentes neste instrumento">${optsExistentes}</optgroup>` : '') +
-    `<optgroup label="Catálogo oficial SEFAZ/RS (18 projetos)">${optsRestantes}</optgroup>` +
-    `<option value="NOVO_PROJETO">➕ Criar Novo Projeto (fora do catálogo)</option>`;
+  select.innerHTML = opts + `<option value="NOVO_PROJETO">➕ Criar Novo Projeto</option>`;
 
   toggleNovoProjInput(select.value);
 
